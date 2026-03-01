@@ -5,9 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Github } from "lucide-react";
 
 export default function LoginPage() {
-  const supabase = createClient();
-
   const handleLogin = async (provider: "google" | "github") => {
+    const supabase = createClient();
     await supabase.auth.signInWithOAuth({
       provider,
       options: {
