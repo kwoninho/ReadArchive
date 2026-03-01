@@ -37,3 +37,4 @@
 ## 주의사항 (학습된 교훈)
 
 - **Next.js API Route placeholder**: `route.ts` 파일은 반드시 HTTP 메서드 함수(`GET`, `POST` 등)를 export해야 한다. 주석만 있는 파일은 빌드 에러(`is not a module`)를 유발한다.
+- **외부 API 클라이언트 지연 초기화**: `new OpenAI()` 같은 외부 API 클라이언트를 모듈 최상위에서 생성하면 빌드 타임에 환경 변수가 없어 Vercel 배포가 실패한다. 반드시 함수 내부에서 지연 초기화(`getOpenAI()` 패턴)해야 한다.
