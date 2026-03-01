@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Header } from "@/components/layout/header";
 import { BookDetail } from "@/components/book/book-detail";
@@ -12,7 +12,7 @@ export default async function BookDetailPage({ params }: Params) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return null;
+  if (!user) redirect("/login");
 
   const { data: book } = await supabase
     .from("books")
