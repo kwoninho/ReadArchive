@@ -1,6 +1,20 @@
-// OAuth 콜백 처리
-import { NextRequest } from "next/server";
+// OAuth 콜백 처리: code → session 교환
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest) {
-  return Response.json({ message: "not implemented" }, { status: 501 });
+  const { searchParams, origin } = request.nextUrl;
+  const code = searchParams.get("code");
+  const next = searchParams.get("next") ?? "/";
+
+  if (code) {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error) {
+      return NextResponse.redirect(`${origin}${next}`);
+    }
+  }
+
+  // 에러 발생 시 로그인 페이지로 리다이렉트
+  return NextResponse.redirect(`${origin}/login`);
 }
