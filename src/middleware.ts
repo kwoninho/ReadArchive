@@ -1,8 +1,13 @@
-import { updateSession } from "@/lib/supabase/middleware";
-import type { NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
-  return await updateSession(request);
+  try {
+    const { updateSession } = await import("@/lib/supabase/middleware");
+    return await updateSession(request);
+  } catch {
+    // 미들웨어 실패 시 요청을 그대로 통과시킴
+    return NextResponse.next();
+  }
 }
 
 export const config = {
