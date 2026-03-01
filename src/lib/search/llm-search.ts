@@ -1,5 +1,4 @@
 // LLM 기반 책 검색
-import { getOpenAI } from "@/lib/openai";
 import type { SearchCandidate } from "@/types";
 
 const SEARCH_PROMPT = `다음 책에 대한 정보를 JSON 형식으로 제공해주세요.
@@ -47,7 +46,11 @@ function buildCoverUrl(isbn: string): string | null {
 export async function searchBooksWithLLM(
   query: string
 ): Promise<SearchCandidate[]> {
-  const response = await getOpenAI().chat.completions.create({
+  // 동적 import로 빌드 타임 모듈 평가 방지
+  const { default: OpenAI } = await import("openai");
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+  const response = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
       {
