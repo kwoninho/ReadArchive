@@ -1,8 +1,10 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useBookStore } from "@/stores/book-store";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -21,6 +23,16 @@ interface HeaderProps {
 export function Header({ user }: HeaderProps) {
   const router = useRouter();
   const supabase = createClient();
+  const setFilterQuery = useBookStore((s) => s.setFilterQuery);
+  const [localQuery, setLocalQuery] = useState("");
+
+  // 디바운스 300ms
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFilterQuery(localQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [localQuery, setFilterQuery]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -48,15 +60,16 @@ export function Header({ user }: HeaderProps) {
           ReadArchive
         </Link>
 
-        {/* 검색 바 (placeholder, 기능은 T-4.05에서 구현) */}
+        {/* 검색 바 */}
         <div className="hidden max-w-md flex-1 px-8 md:block">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
               placeholder="제목 또는 저자로 검색..."
+              value={localQuery}
+              onChange={(e) => setLocalQuery(e.target.value)}
               className="h-9 w-full rounded-md border bg-transparent pl-9 pr-3 text-sm outline-none focus:ring-1 focus:ring-ring"
-              readOnly
             />
           </div>
         </div>
