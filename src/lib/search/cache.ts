@@ -1,17 +1,26 @@
 // 검색 결과 캐싱 레이어
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { SearchCandidate } from "@/types";
 
-// 캐시 조회/저장에는 RLS를 우회하는 service role 클라이언트 사용
-function getServiceClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+// search_cache 테이블은 Supabase DB 타입에 미포함이므로 untyped 클라이언트 사용
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type UntypedSupabase = SupabaseClient<any, "public", any>;
+
+// 캐시 조회/저장에는 RLS를 우회하는 service role 클라이언트 사용 (싱글턴)
+let serviceClient: UntypedSupabase | null = null;
+
+function getServiceClient(): UntypedSupabase {
+  if (!serviceClient) {
+    serviceClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+  }
+  return serviceClient;
 }
 
 // 검색어 정규화 (캐시 키 생성)
-function normalizeQuery(query: string): string {
+export function normalizeQuery(query: string): string {
   return query.trim().toLowerCase();
 }
 

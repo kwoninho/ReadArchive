@@ -36,19 +36,28 @@ interface LLMSearchResult {
 }
 
 // ISBN으로 Open Library 표지 URL 생성
-function buildCoverUrl(isbn: string): string | null {
+export function buildCoverUrl(isbn: string): string | null {
   if (!isbn) return null;
   const cleaned = isbn.replace(/[-\s]/g, "");
   if (cleaned.length < 10) return null;
   return `https://covers.openlibrary.org/b/isbn/${cleaned}-M.jpg`;
 }
 
+// 싱글턴 OpenAI 클라이언트 (지연 초기화)
+let openaiInstance: InstanceType<typeof import("openai").default> | null = null;
+
+async function getOpenAIClient() {
+  if (!openaiInstance) {
+    const { default: OpenAI } = await import("openai");
+    openaiInstance = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+  return openaiInstance;
+}
+
 export async function searchBooksWithLLM(
   query: string
 ): Promise<SearchCandidate[]> {
-  // 동적 import로 빌드 타임 모듈 평가 방지
-  const { default: OpenAI } = await import("openai");
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const openai = await getOpenAIClient();
 
   const response = await openai.chat.completions.create({
     model: "gpt-4o-mini",
