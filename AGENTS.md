@@ -33,3 +33,7 @@
 | 인증 | Supabase Auth |
 | LLM API | OpenAI GPT-4o-mini |
 | 배포 | Vercel |
+
+## 주의사항 (학습된 교훈)
+
+- **Next.js API Route placeholder**: `route.ts` 파일은 반드시 HTTP 메서드 함수(`GET`, `POST` 등)를 export해야 한다. 주석만 있는 파일은 빌드 에러(`is not a module`)를 유발한다.
