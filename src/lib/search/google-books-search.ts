@@ -21,7 +21,15 @@ interface GoogleBooksResponse {
 export async function searchBooksWithGoogleBooks(
   query: string
 ): Promise<SearchCandidate[]> {
-  const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=10&langRestrict=ko`;
+  const params = new URLSearchParams({
+    q: query,
+    maxResults: "10",
+    langRestrict: "ko",
+  });
+  if (process.env.GOOGLE_BOOKS_API_KEY) {
+    params.set("key", process.env.GOOGLE_BOOKS_API_KEY);
+  }
+  const url = `https://www.googleapis.com/books/v1/volumes?${params}`;
 
   const response = await fetch(url);
   if (!response.ok) {
