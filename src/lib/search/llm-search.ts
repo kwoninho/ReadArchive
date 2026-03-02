@@ -67,21 +67,24 @@ export async function searchBooksWithLLM(
   query: string
 ): Promise<SearchCandidate[]> {
   const model = getGeminiModel();
+  const prompt = SEARCH_PROMPT.replace("{query}", query);
 
-  const result = await model.generateContent(
-    SEARCH_PROMPT.replace("{query}", query)
-  );
+  console.log("[gemini] sending request, query:", query);
+  const result = await model.generateContent(prompt);
 
   const content = result.response.text();
+  console.log("[gemini] raw response:", content.substring(0, 500));
   if (!content) {
     throw new Error("LLM 응답이 비어 있습니다");
   }
 
   const parsed: LLMSearchResult = JSON.parse(content);
   if (!parsed.candidates || !Array.isArray(parsed.candidates)) {
+    console.error("[gemini] unexpected format, keys:", Object.keys(parsed));
     throw new Error("LLM 응답 형식이 올바르지 않습니다");
   }
 
+  console.log(`[gemini] parsed ${parsed.candidates.length} candidates`);
   return parsed.candidates.map((c) => ({
     title: c.title,
     author: c.author,

@@ -69,10 +69,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  console.log(`[search] query="${query}"`);
+
   // 1. 캐시 조회
   try {
     const cached = await getCachedSearch(query);
     if (cached) {
+      console.log(`[search] cache hit: ${cached.length} candidates`);
       const response: SearchResponse = {
         candidates: cached,
         source: "cache",
@@ -80,13 +83,16 @@ export async function POST(request: NextRequest) {
       };
       return Response.json(response);
     }
-  } catch {
-    // 캐시 조회 실패는 무시하고 계속 진행
+    console.log("[search] cache miss");
+  } catch (e) {
+    console.error("[search] cache error:", e);
   }
 
   // 2. LLM 검색 시도
   try {
+    console.log("[search] trying Gemini...");
     const candidates = await searchBooksWithLLM(query);
+    console.log(`[search] Gemini returned ${candidates.length} candidates`);
     if (candidates.length > 0) {
       // 캐시 저장 (비동기, 에러 무시)
       setCachedSearch(query, candidates, "gemini").catch(() => {});
@@ -98,13 +104,15 @@ export async function POST(request: NextRequest) {
       };
       return Response.json(response);
     }
-  } catch {
-    // LLM 실패 시 폴백으로 진행
+  } catch (e) {
+    console.error("[search] Gemini error:", e);
   }
 
   // 3. Google Books API 폴백
   try {
+    console.log("[search] trying Google Books fallback...");
     const candidates = await searchBooksWithGoogleBooks(query);
+    console.log(`[search] Google Books returned ${candidates.length} candidates`);
     if (candidates.length > 0) {
       // 캐시 저장 (비동기, 에러 무시)
       setCachedSearch(query, candidates, "google_books").catch(() => {});
@@ -116,11 +124,12 @@ export async function POST(request: NextRequest) {
       };
       return Response.json(response);
     }
-  } catch {
-    // Google Books도 실패
+  } catch (e) {
+    console.error("[search] Google Books error:", e);
   }
 
   // 4. 모든 검색 실패
+  console.warn("[search] all sources failed for query:", query);
   const response: SearchResponse = {
     candidates: [],
     source: "none",
