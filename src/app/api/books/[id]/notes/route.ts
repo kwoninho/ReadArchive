@@ -1,20 +1,14 @@
 // 메모 목록 조회 / 추가 API
 import { NextRequest } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-
-type Params = { params: Promise<{ id: string }> };
+import { requireAuth, isAuthError, safeParseJSON, getString } from "@/lib/api/helpers";
+import type { RouteParams } from "@/types";
 
 // GET: 특정 책의 메모 목록 조회 (최신순)
-export async function GET(_request: NextRequest, { params }: Params) {
+export async function GET(_request: NextRequest, { params }: RouteParams) {
   const { id: bookId } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return Response.json({ error: "인증이 필요합니다" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (isAuthError(auth)) return auth;
+  const { supabase, user } = auth;
 
   const { data, error } = await supabase
     .from("notes")
@@ -31,19 +25,19 @@ export async function GET(_request: NextRequest, { params }: Params) {
 }
 
 // POST: 메모 추가
-export async function POST(request: NextRequest, { params }: Params) {
+export async function POST(request: NextRequest, { params }: RouteParams) {
   const { id: bookId } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const auth = await requireAuth();
+  if (isAuthError(auth)) return auth;
+  const { supabase, user } = auth;
 
-  if (!user) {
-    return Response.json({ error: "인증이 필요합니다" }, { status: 401 });
+  const body = await safeParseJSON(request);
+  if (!body) {
+    return Response.json({ error: "잘못된 요청입니다" }, { status: 400 });
   }
 
-  const body = await request.json();
-  if (!body.content?.trim()) {
+  const content = getString(body, "content")?.trim();
+  if (!content) {
     return Response.json(
       { error: "메모 내용을 입력해주세요" },
       { status: 400 }
@@ -55,7 +49,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     .insert({
       book_id: bookId,
       user_id: user.id,
-      content: body.content.trim(),
+      content,
     })
     .select()
     .single();

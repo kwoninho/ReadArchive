@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -18,7 +19,7 @@ import type { SearchCandidate, SearchResponse } from "@/types";
 interface SearchModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onBookAdded: () => void;
+  onBookAdded: (book: Record<string, unknown>) => void;
 }
 
 export function SearchModal({
@@ -90,8 +91,9 @@ export function SearchModal({
         throw new Error(err.error || "등록에 실패했습니다");
       }
 
+      const created = await res.json();
       toast.success(`'${candidate.title}'이(가) 추가되었습니다`);
-      onBookAdded();
+      onBookAdded(created);
       handleClose();
     } catch (err) {
       toast.error(
@@ -121,8 +123,9 @@ export function SearchModal({
         throw new Error(err.error || "등록에 실패했습니다");
       }
 
+      const created = await res.json();
       toast.success(`'${data.title}'이(가) 추가되었습니다`);
-      onBookAdded();
+      onBookAdded(created);
       handleClose();
     } catch (err) {
       toast.error(
@@ -146,6 +149,9 @@ export function SearchModal({
       <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>책 검색</DialogTitle>
+          <DialogDescription>
+            제목으로 검색하면 AI가 책 정보를 찾아줍니다.
+          </DialogDescription>
         </DialogHeader>
 
         {/* 검색 폼 */}

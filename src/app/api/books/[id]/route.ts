@@ -1,20 +1,20 @@
 // 책 상세 조회 / 수정 / 삭제 API
 import { NextRequest } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-
-type Params = { params: Promise<{ id: string }> };
+import {
+  requireAuth,
+  isAuthError,
+  safeParseJSON,
+  isValidBookStatus,
+  isValidRating,
+} from "@/lib/api/helpers";
+import type { RouteParams } from "@/types";
 
 // GET: 책 상세 조회
-export async function GET(_request: NextRequest, { params }: Params) {
+export async function GET(_request: NextRequest, { params }: RouteParams) {
   const { id } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return Response.json({ error: "인증이 필요합니다" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (isAuthError(auth)) return auth;
+  const { supabase, user } = auth;
 
   const { data, error } = await supabase
     .from("books")
@@ -31,23 +31,24 @@ export async function GET(_request: NextRequest, { params }: Params) {
 }
 
 // PATCH: 책 정보 수정
-export async function PATCH(request: NextRequest, { params }: Params) {
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const { id } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const auth = await requireAuth();
+  if (isAuthError(auth)) return auth;
+  const { supabase, user } = auth;
 
-  if (!user) {
-    return Response.json({ error: "인증이 필요합니다" }, { status: 401 });
+  const body = await safeParseJSON(request);
+  if (!body) {
+    return Response.json({ error: "잘못된 요청입니다" }, { status: 400 });
   }
-
-  const body = await request.json();
 
   // 업데이트할 필드 구성 (snake_case 변환)
   const updates: Record<string, unknown> = {};
 
   if (body.status !== undefined) {
+    if (!isValidBookStatus(body.status)) {
+      return Response.json({ error: "유효하지 않은 상태값입니다" }, { status: 400 });
+    }
     updates.status = body.status;
 
     // READING으로 변경 시 시작일 자동 설정
@@ -60,7 +61,13 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     }
   }
 
-  if (body.rating !== undefined) updates.rating = body.rating;
+  if (body.rating !== undefined) {
+    if (!isValidRating(body.rating)) {
+      return Response.json({ error: "별점은 1~5 사이의 정수여야 합니다" }, { status: 400 });
+    }
+    updates.rating = body.rating;
+  }
+
   if (body.startedAt !== undefined) updates.started_at = body.startedAt;
   if (body.finishedAt !== undefined) updates.finished_at = body.finishedAt;
 
@@ -80,16 +87,11 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 }
 
 // DELETE: 책 삭제
-export async function DELETE(_request: NextRequest, { params }: Params) {
+export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   const { id } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return Response.json({ error: "인증이 필요합니다" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (isAuthError(auth)) return auth;
+  const { supabase, user } = auth;
 
   const { error } = await supabase
     .from("books")

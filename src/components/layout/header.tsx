@@ -22,7 +22,6 @@ interface HeaderProps {
 
 export function Header({ user }: HeaderProps) {
   const router = useRouter();
-  const supabase = createClient();
   const setFilterQuery = useBookStore((s) => s.setFilterQuery);
   const [localQuery, setLocalQuery] = useState("");
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
@@ -36,6 +35,7 @@ export function Header({ user }: HeaderProps) {
   }, [localQuery, setFilterQuery]);
 
   const handleLogout = async () => {
+    const supabase = createClient();
     await supabase.auth.signOut();
     router.push("/login");
     router.refresh();

@@ -1,4 +1,5 @@
-export type BookStatus = "WANT_TO_READ" | "READING" | "FINISHED";
+export const BOOK_STATUSES = ["WANT_TO_READ", "READING", "FINISHED"] as const;
+export type BookStatus = (typeof BOOK_STATUSES)[number];
 
 export interface Book {
   id: string;
@@ -43,26 +44,9 @@ export interface SearchCandidate {
 
 export interface SearchResponse {
   candidates: SearchCandidate[];
-  source: "llm" | "google_books" | "cache";
+  source: "llm" | "google_books" | "cache" | "none";
   cached: boolean;
 }
 
-export interface BookCreateInput {
-  title: string;
-  author?: string;
-  publisher?: string;
-  publishedYear?: number;
-  isbn?: string;
-  pageCount?: number;
-  summary?: string;
-  category?: string;
-  coverUrl?: string;
-  status?: BookStatus;
-}
-
-export interface BookUpdateInput {
-  status?: BookStatus;
-  rating?: number | null;
-  startedAt?: string | null;
-  finishedAt?: string | null;
-}
+/** Next.js App Router 동적 라우트 파라미터 */
+export type RouteParams = { params: Promise<{ id: string }> };

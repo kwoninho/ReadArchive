@@ -18,9 +18,7 @@ import { SearchModal } from "@/components/search/search-modal";
 import { useBookStore, mapBookFromDB } from "@/stores/book-store";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { toast } from "sonner";
-import type { Book, BookStatus } from "@/types";
-
-const STATUSES: BookStatus[] = ["WANT_TO_READ", "READING", "FINISHED"];
+import { BOOK_STATUSES, type Book, type BookStatus } from "@/types";
 
 interface KanbanBoardProps {
   initialBooks: Record<string, unknown>[];
@@ -29,6 +27,7 @@ interface KanbanBoardProps {
 export function KanbanBoard({ initialBooks }: KanbanBoardProps) {
   const {
     setBooks,
+    addBook,
     booksByStatus,
     moveBook,
     updateBook,
@@ -87,17 +86,12 @@ export function KanbanBoard({ initialBooks }: KanbanBoardProps) {
     }
   };
 
-  const handleBookAdded = useCallback(async () => {
-    try {
-      const res = await fetch("/api/books");
-      if (res.ok) {
-        const data = await res.json();
-        setBooks(data.map(mapBookFromDB));
-      }
-    } catch {
-      // 리페치 실패 시 무시
-    }
-  }, [setBooks]);
+  const handleBookAdded = useCallback(
+    (rawBook: Record<string, unknown>) => {
+      addBook(mapBookFromDB(rawBook));
+    },
+    [addBook]
+  );
 
   return (
     <>
@@ -110,7 +104,7 @@ export function KanbanBoard({ initialBooks }: KanbanBoardProps) {
           onDragEnd={handleDragEnd}
         >
           <div className="grid grid-cols-3 gap-4">
-            {STATUSES.map((status) => (
+            {BOOK_STATUSES.map((status) => (
               <BoardColumn
                 key={status}
                 status={status}

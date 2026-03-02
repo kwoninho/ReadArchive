@@ -4,12 +4,10 @@ import type { Book, BookStatus } from "@/types";
 
 interface BookStore {
   books: Book[];
-  isLoading: boolean;
   filterQuery: string;
 
   // Actions
   setBooks: (books: Book[]) => void;
-  setLoading: (loading: boolean) => void;
   setFilterQuery: (query: string) => void;
   addBook: (book: Book) => void;
   updateBook: (id: string, updates: Partial<Book>) => void;
@@ -46,11 +44,9 @@ export function mapBookFromDB(row: Record<string, unknown>): Book {
 
 export const useBookStore = create<BookStore>((set, get) => ({
   books: [],
-  isLoading: false,
   filterQuery: "",
 
   setBooks: (books) => set({ books }),
-  setLoading: (isLoading) => set({ isLoading }),
   setFilterQuery: (filterQuery) => set({ filterQuery }),
 
   addBook: (book) => set((state) => ({ books: [book, ...state.books] })),

@@ -1,6 +1,6 @@
 // 책 검색 API: 캐시 → LLM → Google Books 순서
 import { NextRequest } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuth, isAuthError, safeParseJSON, getString } from "@/lib/api/helpers";
 import { searchBooksWithLLM } from "@/lib/search/llm-search";
 import { searchBooksWithGoogleBooks } from "@/lib/search/google-books-search";
 import { getCachedSearch, setCachedSearch } from "@/lib/search/cache";
@@ -23,18 +23,23 @@ function checkRateLimit(userId: string): boolean {
   return true;
 }
 
+// 만료 항목 정리 (1000개 초과 시)
+function pruneRateLimitMap() {
+  if (rateLimitMap.size <= 1000) return;
+  const now = Date.now();
+  for (const [key, entry] of rateLimitMap) {
+    if (now > entry.resetAt) rateLimitMap.delete(key);
+  }
+}
+
 export async function POST(request: NextRequest) {
   // 인증 확인
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return Response.json({ error: "인증이 필요합니다" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (isAuthError(auth)) return auth;
+  const { user } = auth;
 
   // Rate limit 확인
+  pruneRateLimitMap();
   if (!checkRateLimit(user.id)) {
     return Response.json(
       { error: "요청이 너무 많습니다. 잠시 후 다시 시도해주세요." },
@@ -43,8 +48,12 @@ export async function POST(request: NextRequest) {
   }
 
   // 입력 검증
-  const body = await request.json();
-  const query = body.query?.trim();
+  const body = await safeParseJSON(request);
+  if (!body) {
+    return Response.json({ error: "잘못된 요청입니다" }, { status: 400 });
+  }
+
+  const query = getString(body, "query")?.trim();
 
   if (!query || query.length === 0) {
     return Response.json(
@@ -114,7 +123,7 @@ export async function POST(request: NextRequest) {
   // 4. 모든 검색 실패
   const response: SearchResponse = {
     candidates: [],
-    source: "llm",
+    source: "none",
     cached: false,
   };
   return Response.json(response);
