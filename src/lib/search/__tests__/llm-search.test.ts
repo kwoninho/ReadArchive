@@ -1,36 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { buildCoverUrl } from "../llm-search";
-
-describe("buildCoverUrl", () => {
-  it("generates Google Books URL for valid ISBN-13", () => {
-    expect(buildCoverUrl("9781234567890")).toBe(
-      "https://books.google.com/books/content?vid=isbn:9781234567890&printsec=frontcover&img=1&zoom=1"
-    );
-  });
-
-  it("strips hyphens and spaces", () => {
-    expect(buildCoverUrl("978-1-234-56789-0")).toBe(
-      "https://books.google.com/books/content?vid=isbn:9781234567890&printsec=frontcover&img=1&zoom=1"
-    );
-    expect(buildCoverUrl("978 1234567890")).toBe(
-      "https://books.google.com/books/content?vid=isbn:9781234567890&printsec=frontcover&img=1&zoom=1"
-    );
-  });
-
-  it("returns null for empty string", () => {
-    expect(buildCoverUrl("")).toBeNull();
-  });
-
-  it("returns null for string shorter than 10 chars after cleaning", () => {
-    expect(buildCoverUrl("12345")).toBeNull();
-  });
-
-  it("generates URL for valid ISBN-10", () => {
-    expect(buildCoverUrl("1234567890")).toBe(
-      "https://books.google.com/books/content?vid=isbn:1234567890&printsec=frontcover&img=1&zoom=1"
-    );
-  });
-});
 
 // --- Mocked tests for searchBooksWithLLM ---
 
@@ -54,7 +22,7 @@ describe("searchBooksWithLLM", () => {
     return mod.searchBooksWithLLM;
   }
 
-  it("maps Gemini response to SearchCandidate[] with coverUrl", async () => {
+  it("maps Gemini response to SearchCandidate[] with coverUrl null", async () => {
     mockGenerateContent.mockResolvedValue({
       response: {
         text: () =>
@@ -88,8 +56,7 @@ describe("searchBooksWithLLM", () => {
       pageCount: 584,
       summary: "좋은 코드 작성법",
       category: "프로그래밍",
-      coverUrl:
-        "https://books.google.com/books/content?vid=isbn:9788966260959&printsec=frontcover&img=1&zoom=1",
+      coverUrl: null,
     });
   });
 

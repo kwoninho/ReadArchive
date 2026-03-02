@@ -38,14 +38,6 @@ interface LLMSearchResult {
   }>;
 }
 
-// ISBN으로 Google Books 표지 URL 생성
-export function buildCoverUrl(isbn: string): string | null {
-  if (!isbn) return null;
-  const cleaned = isbn.replace(/[-\s]/g, "");
-  if (cleaned.length < 10) return null;
-  return `https://books.google.com/books/content?vid=isbn:${cleaned}&printsec=frontcover&img=1&zoom=1`;
-}
-
 // 싱글턴 Gemini 모델 (지연 초기화)
 let geminiModel: GenerativeModel | null = null;
 
@@ -94,6 +86,6 @@ export async function searchBooksWithLLM(
     pageCount: c.pageCount,
     summary: c.summary,
     category: c.category,
-    coverUrl: buildCoverUrl(c.isbn),
+    coverUrl: null, // Google Books API에서 보강
   }));
 }

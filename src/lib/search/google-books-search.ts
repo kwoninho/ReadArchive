@@ -1,4 +1,4 @@
-// Google Books API 폴백 검색
+// Google Books API 검색 및 표지 이미지 조회
 import type { SearchCandidate } from "@/types";
 
 interface GoogleBooksResponse {
@@ -67,7 +67,58 @@ export async function searchBooksWithGoogleBooks(
       pageCount: info.pageCount ?? 0,
       summary: info.description?.substring(0, 200) ?? "",
       category: info.categories?.[0] ?? "",
-      coverUrl: info.imageLinks?.thumbnail ?? null,
+      coverUrl: info.imageLinks?.thumbnail?.replace("http://", "https://") ?? null,
     };
   });
+}
+
+// Google Books API로 표지 URL 조회 (제목+저자 매칭)
+export async function fetchCovers(
+  candidates: SearchCandidate[]
+): Promise<void> {
+  const withoutCover = candidates.filter((c) => !c.coverUrl);
+  if (withoutCover.length === 0) return;
+
+  // 타이틀 기반으로 한 번만 검색
+  const query = withoutCover
+    .slice(0, 3)
+    .map((c) => c.title)
+    .join(" ");
+  const params = new URLSearchParams({
+    q: query,
+    maxResults: "20",
+  });
+  if (process.env.GOOGLE_BOOKS_API_KEY) {
+    params.set("key", process.env.GOOGLE_BOOKS_API_KEY);
+  }
+  const url = `https://www.googleapis.com/books/v1/volumes?${params}`;
+
+  const response = await fetch(url);
+  if (!response.ok) return;
+
+  const data: GoogleBooksResponse = await response.json();
+  if (!data.items) return;
+
+  // ISBN → coverUrl, 제목(소문자) → coverUrl 매핑
+  const coverMap = new Map<string, string>();
+  for (const item of data.items) {
+    const info = item.volumeInfo;
+    const thumb = info.imageLinks?.thumbnail?.replace("http://", "https://");
+    if (!thumb) continue;
+
+    if (info.title) {
+      coverMap.set(info.title.toLowerCase(), thumb);
+    }
+    for (const id of info.industryIdentifiers ?? []) {
+      coverMap.set(id.identifier, thumb);
+    }
+  }
+
+  // 매칭하여 coverUrl 채우기
+  for (const c of candidates) {
+    if (c.coverUrl) continue;
+    const byIsbn = c.isbn ? coverMap.get(c.isbn) : undefined;
+    const byTitle = coverMap.get(c.title.toLowerCase());
+    c.coverUrl = byIsbn ?? byTitle ?? c.coverUrl;
+  }
 }

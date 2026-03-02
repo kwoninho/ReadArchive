@@ -2,7 +2,7 @@
 import { NextRequest } from "next/server";
 import { requireAuth, isAuthError, safeParseJSON, getString } from "@/lib/api/helpers";
 import { searchBooksWithLLM } from "@/lib/search/llm-search";
-import { searchBooksWithGoogleBooks } from "@/lib/search/google-books-search";
+import { searchBooksWithGoogleBooks, fetchCovers } from "@/lib/search/google-books-search";
 import { getCachedSearch, setCachedSearch } from "@/lib/search/cache";
 import type { SearchResponse } from "@/types";
 
@@ -94,6 +94,12 @@ export async function POST(request: NextRequest) {
     const candidates = await searchBooksWithLLM(query);
     console.log(`[search] Gemini returned ${candidates.length} candidates`);
     if (candidates.length > 0) {
+      // 표지 이미지 보강 (Google Books에서 조회)
+      try {
+        await fetchCovers(candidates);
+      } catch (e) {
+        console.error("[search] cover enrichment error:", e);
+      }
       // 캐시 저장 (비동기, 에러 무시)
       setCachedSearch(query, candidates, "gemini").catch(() => {});
 
