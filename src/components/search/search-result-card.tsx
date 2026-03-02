@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
@@ -16,18 +17,22 @@ export function SearchResultCard({
   onAdd,
   isAdding,
 }: SearchResultCardProps) {
+  const [imgError, setImgError] = useState(false);
+  const showImage = candidate.coverUrl && !imgError;
+
   return (
     <div className="flex gap-3 rounded-lg border p-3">
       {/* 표지 이미지 */}
       <div className="relative h-20 w-14 shrink-0 overflow-hidden rounded bg-muted">
-        {candidate.coverUrl ? (
+        {showImage ? (
           <Image
-            src={candidate.coverUrl}
+            src={candidate.coverUrl!}
             alt={candidate.title}
             fill
             className="object-cover"
             sizes="56px"
             unoptimized
+            onError={() => setImgError(true)}
           />
         ) : (
           <div className="flex h-full items-center justify-center text-xs text-muted-foreground">

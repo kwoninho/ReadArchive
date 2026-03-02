@@ -44,7 +44,7 @@ export interface SearchCandidate {
 
 export interface SearchResponse {
   candidates: SearchCandidate[];
-  source: "llm" | "google_books" | "cache" | "none";
+  source: "gemini" | "google_books" | "cache" | "none";
   cached: boolean;
 }
 

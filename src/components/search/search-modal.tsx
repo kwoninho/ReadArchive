@@ -180,15 +180,19 @@ export function SearchModal({
 
         {!isSearching && results.length > 0 && (
           <div className="flex flex-col gap-2">
-            <p className="text-sm text-muted-foreground">검색 결과:</p>
-            {results.map((candidate, index) => (
-              <SearchResultCard
-                key={`${candidate.isbn}-${index}`}
-                candidate={candidate}
-                onAdd={(c) => handleAdd(c, index)}
-                isAdding={addingIndex === index}
-              />
-            ))}
+            <p className="text-sm text-muted-foreground">
+              검색 결과: {results.length}건
+            </p>
+            <div className="max-h-[400px] overflow-y-auto flex flex-col gap-2">
+              {results.map((candidate, index) => (
+                <SearchResultCard
+                  key={`${candidate.isbn}-${index}`}
+                  candidate={candidate}
+                  onAdd={(c) => handleAdd(c, index)}
+                  isAdding={addingIndex === index}
+                />
+              ))}
+            </div>
           </div>
         )}
 

@@ -2,18 +2,18 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { buildCoverUrl } from "../llm-search";
 
 describe("buildCoverUrl", () => {
-  it("generates Open Library URL for valid ISBN-13", () => {
+  it("generates Google Books URL for valid ISBN-13", () => {
     expect(buildCoverUrl("9781234567890")).toBe(
-      "https://covers.openlibrary.org/b/isbn/9781234567890-M.jpg"
+      "https://books.google.com/books/content?vid=isbn:9781234567890&printsec=frontcover&img=1&zoom=1"
     );
   });
 
   it("strips hyphens and spaces", () => {
     expect(buildCoverUrl("978-1-234-56789-0")).toBe(
-      "https://covers.openlibrary.org/b/isbn/9781234567890-M.jpg"
+      "https://books.google.com/books/content?vid=isbn:9781234567890&printsec=frontcover&img=1&zoom=1"
     );
     expect(buildCoverUrl("978 1234567890")).toBe(
-      "https://covers.openlibrary.org/b/isbn/9781234567890-M.jpg"
+      "https://books.google.com/books/content?vid=isbn:9781234567890&printsec=frontcover&img=1&zoom=1"
     );
   });
 
@@ -27,58 +27,52 @@ describe("buildCoverUrl", () => {
 
   it("generates URL for valid ISBN-10", () => {
     expect(buildCoverUrl("1234567890")).toBe(
-      "https://covers.openlibrary.org/b/isbn/1234567890-M.jpg"
+      "https://books.google.com/books/content?vid=isbn:1234567890&printsec=frontcover&img=1&zoom=1"
     );
   });
 });
 
 // --- Mocked tests for searchBooksWithLLM ---
 
-const mockCreate = vi.fn();
+const mockGenerateContent = vi.fn();
 
-vi.mock("openai", () => ({
-  default: class MockOpenAI {
-    chat = {
-      completions: {
-        create: mockCreate,
-      },
-    };
+vi.mock("@google/generative-ai", () => ({
+  GoogleGenerativeAI: class MockGoogleGenerativeAI {
+    getGenerativeModel() {
+      return { generateContent: mockGenerateContent };
+    }
   },
 }));
 
 describe("searchBooksWithLLM", () => {
   beforeEach(() => {
-    mockCreate.mockReset();
+    mockGenerateContent.mockReset();
   });
 
-  // Dynamic import to ensure the mock is applied
   async function getSearchFn() {
     const mod = await import("../llm-search");
     return mod.searchBooksWithLLM;
   }
 
-  it("maps LLM response to SearchCandidate[] with coverUrl", async () => {
-    mockCreate.mockResolvedValue({
-      choices: [
-        {
-          message: {
-            content: JSON.stringify({
-              candidates: [
-                {
-                  title: "클린 코드",
-                  author: "로버트 마틴",
-                  publisher: "인사이트",
-                  publishedYear: 2013,
-                  isbn: "9788966260959",
-                  pageCount: 584,
-                  summary: "좋은 코드 작성법",
-                  category: "프로그래밍",
-                },
-              ],
-            }),
-          },
-        },
-      ],
+  it("maps Gemini response to SearchCandidate[] with coverUrl", async () => {
+    mockGenerateContent.mockResolvedValue({
+      response: {
+        text: () =>
+          JSON.stringify({
+            candidates: [
+              {
+                title: "클린 코드",
+                author: "로버트 마틴",
+                publisher: "인사이트",
+                publishedYear: 2013,
+                isbn: "9788966260959",
+                pageCount: 584,
+                summary: "좋은 코드 작성법",
+                category: "프로그래밍",
+              },
+            ],
+          }),
+      },
     });
 
     const searchBooksWithLLM = await getSearchFn();
@@ -94,13 +88,16 @@ describe("searchBooksWithLLM", () => {
       pageCount: 584,
       summary: "좋은 코드 작성법",
       category: "프로그래밍",
-      coverUrl: "https://covers.openlibrary.org/b/isbn/9788966260959-M.jpg",
+      coverUrl:
+        "https://books.google.com/books/content?vid=isbn:9788966260959&printsec=frontcover&img=1&zoom=1",
     });
   });
 
   it("throws when content is empty", async () => {
-    mockCreate.mockResolvedValue({
-      choices: [{ message: { content: null } }],
+    mockGenerateContent.mockResolvedValue({
+      response: {
+        text: () => "",
+      },
     });
 
     const searchBooksWithLLM = await getSearchFn();
@@ -110,14 +107,10 @@ describe("searchBooksWithLLM", () => {
   });
 
   it("throws when response format is invalid", async () => {
-    mockCreate.mockResolvedValue({
-      choices: [
-        {
-          message: {
-            content: JSON.stringify({ result: [] }),
-          },
-        },
-      ],
+    mockGenerateContent.mockResolvedValue({
+      response: {
+        text: () => JSON.stringify({ result: [] }),
+      },
     });
 
     const searchBooksWithLLM = await getSearchFn();

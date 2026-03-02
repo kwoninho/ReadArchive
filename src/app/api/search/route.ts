@@ -89,11 +89,11 @@ export async function POST(request: NextRequest) {
     const candidates = await searchBooksWithLLM(query);
     if (candidates.length > 0) {
       // 캐시 저장 (비동기, 에러 무시)
-      setCachedSearch(query, candidates, "llm").catch(() => {});
+      setCachedSearch(query, candidates, "gemini").catch(() => {});
 
       const response: SearchResponse = {
         candidates,
-        source: "llm",
+        source: "gemini",
         cached: false,
       };
       return Response.json(response);

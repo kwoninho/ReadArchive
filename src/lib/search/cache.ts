@@ -48,7 +48,7 @@ export async function getCachedSearch(
 export async function setCachedSearch(
   query: string,
   result: SearchCandidate[],
-  source: "llm" | "google_books"
+  source: "gemini" | "google_books"
 ): Promise<void> {
   const supabase = getServiceClient();
   const normalized = normalizeQuery(query);

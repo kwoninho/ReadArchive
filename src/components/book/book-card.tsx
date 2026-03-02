@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { Book } from "@/types";
@@ -23,6 +24,9 @@ function StarRatingDisplay({ rating }: { rating: number | null }) {
 }
 
 export function BookCard({ book }: BookCardProps) {
+  const [imgError, setImgError] = useState(false);
+  const showImage = book.coverUrl && !imgError;
+
   return (
     <Link
       href={`/books/${book.id}`}
@@ -30,14 +34,15 @@ export function BookCard({ book }: BookCardProps) {
     >
       {/* 표지 */}
       <div className="relative h-16 w-11 shrink-0 overflow-hidden rounded bg-muted">
-        {book.coverUrl ? (
+        {showImage ? (
           <Image
-            src={book.coverUrl}
+            src={book.coverUrl!}
             alt={book.title}
             fill
             className="object-cover"
             sizes="44px"
             unoptimized
+            onError={() => setImgError(true)}
           />
         ) : (
           <div className="flex h-full items-center justify-center text-[8px] text-muted-foreground">
