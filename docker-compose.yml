@@ -5,6 +5,7 @@ services:
       target: dev
     ports:
       - "3000:3000"
+    command: ["pnpm", "exec", "next", "dev", "--webpack", "-H", "0.0.0.0"]
     volumes:
       - ./src:/app/src
       - ./public:/app/public
@@ -15,3 +16,5 @@ services:
       - ./components.json:/app/components.json
     env_file:
       - .env.local
+    environment:
+      - WATCHPACK_POLLING=true
