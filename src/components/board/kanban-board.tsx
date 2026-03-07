@@ -14,6 +14,7 @@ import {
 import { BoardColumn } from "./board-column";
 import { DragOverlayCard } from "./drag-overlay-card";
 import { MobileBoard } from "./mobile-board";
+import { CategoryFilter } from "./category-filter";
 import { SearchModal } from "@/components/search/search-modal";
 import { useBookStore, mapBookFromDB } from "@/stores/book-store";
 import { useMediaQuery } from "@/hooks/use-media-query";
@@ -95,6 +96,8 @@ export function KanbanBoard({ initialBooks }: KanbanBoardProps) {
 
   return (
     <>
+      <CategoryFilter />
+
       {isDesktop ? (
         /* 데스크톱: 3칼럼 드래그앤드롭 칸반 보드 */
         <DndContext

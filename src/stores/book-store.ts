@@ -5,16 +5,19 @@ import type { Book, BookStatus } from "@/types";
 interface BookStore {
   books: Book[];
   filterQuery: string;
+  selectedCategory: string | null;
 
   // Actions
   setBooks: (books: Book[]) => void;
   setFilterQuery: (query: string) => void;
+  setSelectedCategory: (categoryId: string | null) => void;
   addBook: (book: Book) => void;
   updateBook: (id: string, updates: Partial<Book>) => void;
   removeBook: (id: string) => void;
   moveBook: (id: string, newStatus: BookStatus) => void;
 
   // Derived
+  allCategories: () => { id: string; name: string }[];
   filteredBooks: () => Book[];
   booksByStatus: (status: BookStatus) => Book[];
 }
@@ -75,9 +78,11 @@ function mapCategoryRecords(value: unknown): Book["categories"] {
 export const useBookStore = create<BookStore>((set, get) => ({
   books: [],
   filterQuery: "",
+  selectedCategory: null,
 
   setBooks: (books) => set({ books }),
   setFilterQuery: (filterQuery) => set({ filterQuery }),
+  setSelectedCategory: (selectedCategory) => set({ selectedCategory }),
 
   addBook: (book) => set((state) => ({ books: [book, ...state.books] })),
 
@@ -105,15 +110,39 @@ export const useBookStore = create<BookStore>((set, get) => ({
       }),
     })),
 
-  filteredBooks: () => {
-    const { books, filterQuery } = get();
-    if (!filterQuery.trim()) return books;
-    const q = filterQuery.toLowerCase();
-    return books.filter(
-      (b) =>
-        b.title.toLowerCase().includes(q) ||
-        (b.author && b.author.toLowerCase().includes(q))
+  allCategories: () => {
+    const { books } = get();
+    const map = new Map<string, string>();
+    for (const book of books) {
+      for (const cat of book.categories) {
+        if (!map.has(cat.id)) map.set(cat.id, cat.name);
+      }
+    }
+    return Array.from(map, ([id, name]) => ({ id, name })).sort((a, b) =>
+      a.name.localeCompare(b.name)
     );
+  },
+
+  filteredBooks: () => {
+    const { books, filterQuery, selectedCategory } = get();
+    let result = books;
+
+    if (filterQuery.trim()) {
+      const q = filterQuery.toLowerCase();
+      result = result.filter(
+        (b) =>
+          b.title.toLowerCase().includes(q) ||
+          (b.author && b.author.toLowerCase().includes(q))
+      );
+    }
+
+    if (selectedCategory) {
+      result = result.filter((b) =>
+        b.categories.some((c) => c.id === selectedCategory)
+      );
+    }
+
+    return result;
   },
 
   booksByStatus: (status) => {

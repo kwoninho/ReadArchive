@@ -108,7 +108,7 @@ describe("mapBookFromDB", () => {
 
 describe("useBookStore", () => {
   beforeEach(() => {
-    useBookStore.setState({ books: [], filterQuery: "" });
+    useBookStore.setState({ books: [], filterQuery: "", selectedCategory: null });
   });
 
   describe("setBooks", () => {
@@ -273,6 +273,96 @@ describe("useBookStore", () => {
       const result = useBookStore.getState().filteredBooks();
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe("1");
+    });
+  });
+
+  describe("allCategories", () => {
+    it("returns deduplicated sorted categories from all books", () => {
+      useBookStore.setState({
+        books: [
+          makeBook({
+            id: "1",
+            categories: [
+              { id: "c1", name: "Science" },
+              { id: "c2", name: "Fiction" },
+            ],
+          }),
+          makeBook({
+            id: "2",
+            categories: [
+              { id: "c1", name: "Science" },
+              { id: "c3", name: "Art" },
+            ],
+          }),
+        ],
+      });
+
+      const result = useBookStore.getState().allCategories();
+      expect(result).toEqual([
+        { id: "c3", name: "Art" },
+        { id: "c2", name: "Fiction" },
+        { id: "c1", name: "Science" },
+      ]);
+    });
+
+    it("returns empty array when no categories", () => {
+      useBookStore.setState({
+        books: [makeBook({ id: "1", categories: [] })],
+      });
+      expect(useBookStore.getState().allCategories()).toEqual([]);
+    });
+  });
+
+  describe("selectedCategory filter", () => {
+    const books = [
+      makeBook({
+        id: "1",
+        title: "Book A",
+        categories: [{ id: "c1", name: "Fiction" }],
+      }),
+      makeBook({
+        id: "2",
+        title: "Book B",
+        categories: [
+          { id: "c1", name: "Fiction" },
+          { id: "c2", name: "Science" },
+        ],
+      }),
+      makeBook({
+        id: "3",
+        title: "Book C",
+        categories: [{ id: "c2", name: "Science" }],
+      }),
+    ];
+
+    beforeEach(() => {
+      useBookStore.setState({ books, filterQuery: "", selectedCategory: null });
+    });
+
+    it("returns all books when no category selected", () => {
+      expect(useBookStore.getState().filteredBooks()).toHaveLength(3);
+    });
+
+    it("filters by selected category", () => {
+      useBookStore.getState().setSelectedCategory("c1");
+      const result = useBookStore.getState().filteredBooks();
+      expect(result).toHaveLength(2);
+      expect(result.map((b) => b.id)).toEqual(["1", "2"]);
+    });
+
+    it("combines with text filter (AND condition)", () => {
+      useBookStore.setState({ filterQuery: "Book B", selectedCategory: "c2" });
+      const result = useBookStore.getState().filteredBooks();
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe("2");
+    });
+
+    it("clears category filter when set to null", () => {
+      useBookStore.getState().setSelectedCategory("c1");
+      expect(useBookStore.getState().filteredBooks()).toHaveLength(2);
+
+      useBookStore.getState().setSelectedCategory(null);
+      expect(useBookStore.getState().filteredBooks()).toHaveLength(3);
     });
   });
 
