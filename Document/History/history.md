@@ -5,6 +5,25 @@
 
 ---
 
+## Phase 9: 카테고리 UI
+
+### T-9.04 카테고리별 필터링 기능 - 2026-03-08
+- Zustand store에 selectedCategory 필터 상태 및 allCategories 파생 함수 추가
+- CategoryFilter 칩 UI 컴포넌트 (전체/개별 카테고리 선택)
+- 검색 쿼리와 AND 조건 필터링, KanbanBoard에 통합
+
+### T-9.03 칸반 보드 책 카드에 카테고리 표시 - 2026-03-08
+- BookCard에 CategoryBadge 추가 (maxCount=2, "+N" 표시)
+
+### T-9.02 도서 상세 페이지에 카테고리 표시 - 2026-03-08
+- BookDetail에 CategoryBadge 추가 (제목/저자 아래 배치)
+
+### T-9.01 카테고리 배지 컴포넌트 구현 - 2026-03-08
+- shadcn Badge 기반 CategoryBadge 공용 컴포넌트
+- maxCount 옵션, 빈 배열 null 반환, 접근성 aria 속성
+
+---
+
 ## Phase 8: 도서 카테고리 분리
 
 ### T-8.01 도서 카테고리 별도 테이블 분리 - 2026-03-07
