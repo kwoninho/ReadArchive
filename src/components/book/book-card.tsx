@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { CategoryBadge } from "./category-badge";
 import type { Book } from "@/types";
 
 interface BookCardProps {
@@ -56,6 +57,9 @@ export function BookCard({ book }: BookCardProps) {
         <p className="truncate text-sm font-medium">{book.title}</p>
         {book.author && (
           <p className="truncate text-xs text-muted-foreground">{book.author}</p>
+        )}
+        {book.categories.length > 0 && (
+          <CategoryBadge categories={book.categories} maxCount={2} />
         )}
         {/* 상태별 추가 정보 */}
         {book.status === "READING" && book.startedAt && (
