@@ -1,12 +1,15 @@
 // 책 목록 조회 / 등록 API
 import { NextRequest } from "next/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   requireAuth,
   isAuthError,
   safeParseJSON,
   getString,
+  getStringArray,
   isValidBookStatus,
 } from "@/lib/api/helpers";
+import { BOOK_WITH_CATEGORIES_SELECT } from "@/lib/books";
 
 // GET: 사용자의 책 목록 조회
 export async function GET(request: NextRequest) {
@@ -19,7 +22,7 @@ export async function GET(request: NextRequest) {
 
   let query = supabase
     .from("books")
-    .select("*")
+    .select(BOOK_WITH_CATEGORIES_SELECT)
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
@@ -59,6 +62,23 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "유효하지 않은 상태값입니다" }, { status: 400 });
   }
 
+  const categoryIds = parseCategoryIds(body);
+  if (body.categoryIds !== undefined && !categoryIds) {
+    return Response.json(
+      { error: "categoryIds는 문자열 배열이어야 합니다" },
+      { status: 400 }
+    );
+  }
+
+  const uniqueCategoryIds = [...new Set(categoryIds ?? [])];
+  const categoryValidation = await validateCategoryIds(supabase, uniqueCategoryIds);
+  if (!categoryValidation.valid) {
+    return Response.json(
+      { error: "유효하지 않은 categoryIds가 포함되어 있습니다" },
+      { status: 400 }
+    );
+  }
+
   const { data, error } = await supabase
     .from("books")
     .insert({
@@ -70,7 +90,6 @@ export async function POST(request: NextRequest) {
       isbn: body.isbn || null,
       page_count: body.pageCount || null,
       summary: body.summary || null,
-      category: body.category || null,
       cover_url: body.coverUrl || null,
       status,
     })
@@ -81,5 +100,56 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: error.message }, { status: 500 });
   }
 
-  return Response.json(data, { status: 201 });
+  if (uniqueCategoryIds.length > 0) {
+    const { error: relationError } = await supabase
+      .from("book_categories")
+      .insert(
+        uniqueCategoryIds.map((categoryId) => ({
+          book_id: data.id,
+          category_id: categoryId,
+        }))
+      );
+
+    if (relationError) {
+      await supabase.from("books").delete().eq("id", data.id).eq("user_id", user.id);
+      return Response.json({ error: relationError.message }, { status: 500 });
+    }
+  }
+
+  const { data: created, error: createdError } = await supabase
+    .from("books")
+    .select(BOOK_WITH_CATEGORIES_SELECT)
+    .eq("id", data.id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (createdError) {
+    return Response.json({ error: createdError.message }, { status: 500 });
+  }
+
+  return Response.json(created, { status: 201 });
+}
+
+function parseCategoryIds(body: Record<string, unknown>): string[] | undefined {
+  return getStringArray(body, "categoryIds");
+}
+
+async function validateCategoryIds(
+  supabase: SupabaseClient,
+  categoryIds: string[]
+) {
+  if (categoryIds.length === 0) {
+    return { valid: true };
+  }
+
+  const { data, error } = await supabase
+    .from("categories")
+    .select("id")
+    .in("id", categoryIds);
+
+  if (error) {
+    return { valid: false };
+  }
+
+  return { valid: (data ?? []).length === categoryIds.length };
 }

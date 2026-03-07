@@ -1,6 +1,11 @@
 export const BOOK_STATUSES = ["WANT_TO_READ", "READING", "FINISHED"] as const;
 export type BookStatus = (typeof BOOK_STATUSES)[number];
 
+export interface Category {
+  id: string;
+  name: string;
+}
+
 export interface Book {
   id: string;
   userId: string;
@@ -11,7 +16,7 @@ export interface Book {
   isbn: string | null;
   pageCount: number | null;
   summary: string | null;
-  category: string | null;
+  categories: Category[];
   coverUrl: string | null;
   status: BookStatus;
   rating: number | null;

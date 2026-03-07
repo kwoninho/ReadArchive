@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { isValidBookStatus, isValidRating, safeParseJSON } from "../helpers";
+import {
+  getStringArray,
+  isValidBookStatus,
+  isValidRating,
+  safeParseJSON,
+} from "../helpers";
 
 describe("isValidBookStatus", () => {
   it.each(["WANT_TO_READ", "READING", "FINISHED"])(
@@ -76,5 +81,23 @@ describe("safeParseJSON", () => {
   it("returns null for empty body", async () => {
     const request = new Request("http://test.com", { method: "POST" });
     expect(await safeParseJSON(request)).toBeNull();
+  });
+});
+
+describe("getStringArray", () => {
+  it("returns string array when all items are strings", () => {
+    expect(
+      getStringArray({ categoryIds: ["a", "b"] }, "categoryIds")
+    ).toEqual(["a", "b"]);
+  });
+
+  it("returns undefined when the field is not an array", () => {
+    expect(getStringArray({ categoryIds: "a" }, "categoryIds")).toBeUndefined();
+  });
+
+  it("returns undefined when the array contains non-string values", () => {
+    expect(
+      getStringArray({ categoryIds: ["a", 1] }, "categoryIds")
+    ).toBeUndefined();
   });
 });

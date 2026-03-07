@@ -112,12 +112,12 @@ describe("setCachedSearch", () => {
     mockInsert.mockResolvedValue({ error: null });
 
     const setCachedSearch = await getSetCachedSearchFn();
-    await setCachedSearch("  Test Query  ", [], "llm");
+    await setCachedSearch("  Test Query  ", [], "gemini");
 
     expect(mockInsert).toHaveBeenCalledWith({
       query: "test query",
       result: [],
-      source: "llm",
+      source: "gemini",
       expires_at: "2024-07-01T00:00:00.000Z",
     });
   });

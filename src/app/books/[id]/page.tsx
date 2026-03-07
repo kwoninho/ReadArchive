@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Header } from "@/components/layout/header";
 import { BookDetail } from "@/components/book/book-detail";
+import { BOOK_WITH_CATEGORIES_SELECT } from "@/lib/books";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -16,7 +17,7 @@ export default async function BookDetailPage({ params }: Params) {
 
   const { data: book } = await supabase
     .from("books")
-    .select("*")
+    .select(BOOK_WITH_CATEGORIES_SELECT)
     .eq("id", id)
     .eq("user_id", user.id)
     .single();

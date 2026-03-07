@@ -46,6 +46,16 @@ export function getString(
   return typeof val === "string" ? val : undefined;
 }
 
+/** Extract a string array field from parsed JSON body */
+export function getStringArray(
+  body: Record<string, unknown>,
+  key: string
+): string[] | undefined {
+  const val = body[key];
+  if (!Array.isArray(val)) return undefined;
+  return val.every((item) => typeof item === "string") ? val : undefined;
+}
+
 /** BookStatus 유효성 검증 */
 export function isValidBookStatus(value: unknown): value is BookStatus {
   return typeof value === "string" && (BOOK_STATUSES as readonly string[]).includes(value);

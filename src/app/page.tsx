@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Header } from "@/components/layout/header";
 import { KanbanBoard } from "@/components/board/kanban-board";
+import { BOOK_WITH_CATEGORIES_SELECT } from "@/lib/books";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -14,7 +15,7 @@ export default async function Home() {
   // 서버에서 초기 데이터 조회
   const { data: books } = await supabase
     .from("books")
-    .select("*")
+    .select(BOOK_WITH_CATEGORIES_SELECT)
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 

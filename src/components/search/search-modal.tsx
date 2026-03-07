@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import type { Dispatch, SetStateAction } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -14,7 +15,8 @@ import { SearchResultCard } from "./search-result-card";
 import { ManualInputForm } from "./manual-input-form";
 import { Loader2, Search } from "lucide-react";
 import { toast } from "sonner";
-import type { SearchCandidate, SearchResponse } from "@/types";
+import { resolveCategoryIds } from "@/lib/categories";
+import type { Category, SearchCandidate, SearchResponse } from "@/types";
 
 interface SearchModalProps {
   open: boolean;
@@ -34,6 +36,32 @@ export function SearchModal({
   const [addingIndex, setAddingIndex] = useState<number | null>(null);
   const [showManualInput, setShowManualInput] = useState(false);
   const [isManualSubmitting, setIsManualSubmitting] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    if (!open || categories.length > 0) return;
+
+    let cancelled = false;
+
+    const loadCategories = async () => {
+      try {
+        const res = await fetch("/api/categories");
+        if (!res.ok) return;
+        const data: Category[] = await res.json();
+        if (!cancelled) {
+          setCategories(data);
+        }
+      } catch {
+        // 등록 시점에 재시도
+      }
+    };
+
+    void loadCategories();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, categories.length]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,6 +98,9 @@ export function SearchModal({
   const handleAdd = async (candidate: SearchCandidate, index: number) => {
     setAddingIndex(index);
     try {
+      const availableCategories = await getCategoriesForAdd(categories, setCategories);
+      const categoryIds = resolveCategoryIds(candidate.category, availableCategories);
+
       const res = await fetch("/api/books", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -81,7 +112,7 @@ export function SearchModal({
           isbn: candidate.isbn,
           pageCount: candidate.pageCount,
           summary: candidate.summary,
-          category: candidate.category,
+          categoryIds,
           coverUrl: candidate.coverUrl,
         }),
       });
@@ -223,4 +254,23 @@ export function SearchModal({
       </DialogContent>
     </Dialog>
   );
+}
+
+async function getCategoriesForAdd(
+  categories: Category[],
+  setCategories: Dispatch<SetStateAction<Category[]>>
+): Promise<Category[]> {
+  if (categories.length > 0) {
+    return categories;
+  }
+
+  try {
+    const res = await fetch("/api/categories");
+    if (!res.ok) return [];
+    const data: Category[] = await res.json();
+    setCategories(data);
+    return data;
+  } catch {
+    return [];
+  }
 }

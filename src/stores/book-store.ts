@@ -21,6 +21,8 @@ interface BookStore {
 
 // DB 컬럼명(snake_case) → 클라이언트 필드명(camelCase) 변환
 export function mapBookFromDB(row: Record<string, unknown>): Book {
+  const categories = extractCategories(row);
+
   return {
     id: row.id as string,
     userId: row.user_id as string,
@@ -31,7 +33,7 @@ export function mapBookFromDB(row: Record<string, unknown>): Book {
     isbn: (row.isbn as string) ?? null,
     pageCount: (row.page_count as number) ?? null,
     summary: (row.summary as string) ?? null,
-    category: (row.category as string) ?? null,
+    categories,
     coverUrl: (row.cover_url as string) ?? null,
     status: row.status as BookStatus,
     rating: (row.rating as number) ?? null,
@@ -40,6 +42,34 @@ export function mapBookFromDB(row: Record<string, unknown>): Book {
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   };
+}
+
+function extractCategories(row: Record<string, unknown>): Book["categories"] {
+  const directCategories = mapCategoryRecords(row.categories);
+  if (directCategories.length > 0) return directCategories;
+
+  if (!Array.isArray(row.book_categories)) return [];
+
+  return row.book_categories.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    return mapCategoryRecords((item as { categories?: unknown }).categories);
+  });
+}
+
+function mapCategoryRecords(value: unknown): Book["categories"] {
+  if (!Array.isArray(value)) return [];
+
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const id = (item as { id?: unknown }).id;
+    const name = (item as { name?: unknown }).name;
+
+    if (typeof id !== "string" || typeof name !== "string") {
+      return [];
+    }
+
+    return [{ id, name }];
+  });
 }
 
 export const useBookStore = create<BookStore>((set, get) => ({
