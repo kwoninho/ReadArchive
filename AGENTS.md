@@ -1,38 +1,36 @@
-# 프로젝트 공통 에이전트 지침
-
-> 이 파일은 AI 에이전트(Claude, Copilot, Cursor 등)가 공통으로 따라야 할 프로젝트 규칙을 정의한다.
-
 ## 언어 규칙
 
-- **코드 작성**: 영어 사용 (변수명, 함수명, 클래스명, 타입명 등 모든 식별자)
-- **주석**: 한국어로 작성
-- **문서**: 한국어로 작성 (README, 기획 문서, PR 설명 등)
-- **커밋 메시지**: 한국어로 작성
+- **코드 작성, 추론 과정**: 영어 사용
+- **주석, 문서, 커밋 메시지**: 한국어로 작성
 
 ## 워크플로우 규칙
-
+- 단순 버그 수정이 아닌 기능 추가나 변경은 코드를 수정하기 전에 반드시 plan.md에 작업 명세를 작성하고 승인 후에 작업을 진행한다. 
+- 신규 기능은 반드시 해당 기능을 검증하는 테스트를 포함해서 작성한다.
 - 각 작업(태스크)이 완료될 때마다 자동으로 git commit을 수행한다.
+- 기존 실패 테스트를 사용자의 명시적 승인 없이 삭제하거나 수정하지 않는다.
 - 작업 중 실수, 모호한 판단, 또는 이후 동일 실수를 방지할 지침이 필요한 경우 이 파일(`AGENTS.md`)에 해당 내용을 추가한다.
   - 예: 잘못된 컨벤션 적용, 누락된 규칙 발견, 반복적 혼동 사례 등
 
-## 프로젝트 구조
+## plan 관리 규칙
 
-- **프레임워크**: Next.js (App Router, TypeScript, Tailwind CSS)
-- **패키지 매니저**: pnpm
-- **주요 문서**: `Document/PRD.md` (제품 요구사항), `Document/plan.md` (개발 작업 계획)
+### 파일 구조
+- `Document/plan.md`: 미구현 작업 명세
+- `Document/History/history.md`: 완료된 작업 이력
 
-## 기술 스택
+### plan.md task 형식
+```
+### [Task 제목]
+- 설명: (구현할 기능)
+- 우선순위: high / medium / low
+```
 
-| 계층 | 기술 |
-|------|------|
-| 프론트엔드 | Next.js 16+ (App Router) |
-| 스타일링 | Tailwind CSS + shadcn/ui |
-| 드래그앤드롭 | @dnd-kit/core |
-| 상태 관리 | React Server Components + Zustand |
-| 백엔드/DB | Supabase (PostgreSQL) |
-| 인증 | Supabase Auth |
-| LLM API | OpenAI GPT-4o-mini |
-| 배포 | Vercel |
+### 완료 처리
+- 사용자 확인 후 완료 처리 (Agent 임의 처리 금지)
+- 완료된 task는 plan.md에서 제거 → history.md 상단에 추가:
+```
+### [Task 제목] - YYYY-MM-DD
+- 완료 내용 요약
+```
 
 ## 주의사항 (학습된 교훈)
 

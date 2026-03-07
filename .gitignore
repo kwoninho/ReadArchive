@@ -34,3 +34,9 @@ Thumbs.db
 
 # test coverage
 coverage/
+
+# build info
+tsconfig.tsbuildinfo
+
+# OMC runtime
+.omc/
