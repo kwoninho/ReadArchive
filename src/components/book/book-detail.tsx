@@ -21,6 +21,7 @@ import {
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { mapBookFromDB } from "@/stores/book-store";
+import { CategoryBadge } from "./category-badge";
 import type { Book, BookStatus } from "@/types";
 
 interface BookDetailProps {
@@ -140,6 +141,11 @@ export function BookDetail({ book: rawBook }: BookDetailProps) {
           <h1 className="text-xl font-bold">{book.title}</h1>
           {book.author && (
             <p className="text-muted-foreground">{book.author}</p>
+          )}
+          {book.categories.length > 0 && (
+            <div className="mt-1">
+              <CategoryBadge categories={book.categories} />
+            </div>
           )}
           <p className="text-sm text-muted-foreground">
             {[
