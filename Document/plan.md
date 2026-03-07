@@ -12,6 +12,7 @@
 - Task ID 형식: `T-{Phase}.{순번}` (예: T-1.01)
 - 의존성이 있는 Task는 `depends` 필드에 명시
 - 완료된 Task는 `Document/History/history.md`로 이동
+- 시작 조건: 사용자 승인 필요.
 
 ---
 
