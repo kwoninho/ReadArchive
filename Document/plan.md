@@ -17,6 +17,6 @@
 
 ## 미구현 작업
 
-### [T-8.01] 도서 카테고리 별도 테이블 분리
-- 설명: `books.category` 컬럼을 `categories` / `book_categories` 구조로 분리하고, API/SSR 조회 경로, store 매핑, 카테고리 정규화 로직을 반영한다.
-- 우선순위: high
+현재 등록된 미구현 작업이 없습니다.
+
+완료 이력은 [history.md](./History/history.md)를 참고하세요.
