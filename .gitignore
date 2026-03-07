@@ -32,6 +32,11 @@ Thumbs.db
 *.swp
 *.swo
 
+# supabase
+supabase/.temp/
+supabase/.branches/
+supabase/.env
+
 # test coverage
 coverage/
 
