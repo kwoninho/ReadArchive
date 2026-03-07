@@ -40,3 +40,6 @@ tsconfig.tsbuildinfo
 
 # OMC runtime
 .omc/
+
+# Claude worktrees (ephemeral agent state)
+.claude/worktrees/
