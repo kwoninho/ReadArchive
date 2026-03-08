@@ -74,6 +74,37 @@ describe("mapBookFromDB", () => {
     });
   });
 
+  it("extracts categories from single-object format (Supabase many-to-one)", () => {
+    const row = {
+      id: "1",
+      user_id: "u1",
+      title: "T",
+      author: null,
+      publisher: null,
+      published_year: null,
+      isbn: null,
+      page_count: null,
+      summary: null,
+      book_categories: [
+        { categories: { id: "cat-1", name: "소설" } },
+        { categories: { id: "cat-2", name: "과학" } },
+      ],
+      cover_url: null,
+      status: "WANT_TO_READ",
+      rating: null,
+      started_at: null,
+      finished_at: null,
+      created_at: "2024-01-01T00:00:00Z",
+      updated_at: "2024-01-01T00:00:00Z",
+    };
+
+    const book = mapBookFromDB(row);
+    expect(book.categories).toEqual([
+      { id: "cat-1", name: "소설" },
+      { id: "cat-2", name: "과학" },
+    ]);
+  });
+
   it("preserves null fields", () => {
     const row = {
       id: "1",

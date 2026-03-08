@@ -60,7 +60,17 @@ function extractCategories(row: Record<string, unknown>): Book["categories"] {
 }
 
 function mapCategoryRecords(value: unknown): Book["categories"] {
-  if (!Array.isArray(value)) return [];
+  if (!value || typeof value !== "object") return [];
+
+  // Single object (Supabase many-to-one returns a single object)
+  if (!Array.isArray(value)) {
+    const id = (value as { id?: unknown }).id;
+    const name = (value as { name?: unknown }).name;
+    if (typeof id === "string" && typeof name === "string") {
+      return [{ id, name }];
+    }
+    return [];
+  }
 
   return value.flatMap((item) => {
     if (!item || typeof item !== "object") return [];
