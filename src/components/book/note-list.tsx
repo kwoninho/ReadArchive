@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { formatDateTime, formatRelativeTime } from "@/lib/format";
 
 interface NoteData {
   id: string;
@@ -26,19 +27,6 @@ interface NoteData {
 
 interface NoteListProps {
   bookId: string;
-}
-
-// 상대 시간 표시
-function formatRelativeTime(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const minutes = Math.floor(diff / 60_000);
-  if (minutes < 1) return "방금 전";
-  if (minutes < 60) return `${minutes}분 전`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}시간 전`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}일 전`;
-  return new Date(dateStr).toLocaleDateString("ko-KR");
 }
 
 export function NoteList({ bookId }: NoteListProps) {
@@ -123,7 +111,10 @@ export function NoteList({ bookId }: NoteListProps) {
                 <p className="whitespace-pre-wrap text-sm">{note.content}</p>
                 <div className="mt-2 flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">
-                    {formatRelativeTime(note.created_at)}
+                    {formatDateTime(note.created_at)}{" "}
+                    <span className="opacity-60">
+                      ({formatRelativeTime(note.created_at)})
+                    </span>
                   </span>
                   <div className="flex gap-1">
                     <Button
