@@ -48,3 +48,6 @@ tsconfig.tsbuildinfo
 
 # Claude worktrees (ephemeral agent state)
 .claude/worktrees/
+
+# Ralph loop state (plugin runtime)
+.claude/ralph-loop.local.md
