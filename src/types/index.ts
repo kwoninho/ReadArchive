@@ -15,6 +15,7 @@ export interface Book {
   publishedYear: number | null;
   isbn: string | null;
   pageCount: number | null;
+  currentPage: number | null;
   summary: string | null;
   categories: Category[];
   coverUrl: string | null;

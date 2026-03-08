@@ -12,6 +12,7 @@ CREATE TABLE books (
   published_year INTEGER,
   isbn TEXT,
   page_count INTEGER,
+  current_page INTEGER CHECK (current_page >= 0),
   summary TEXT,
   cover_url TEXT,
   status TEXT NOT NULL DEFAULT 'WANT_TO_READ'

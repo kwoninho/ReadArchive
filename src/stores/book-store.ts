@@ -35,6 +35,7 @@ export function mapBookFromDB(row: Record<string, unknown>): Book {
     publishedYear: (row.published_year as number) ?? null,
     isbn: (row.isbn as string) ?? null,
     pageCount: (row.page_count as number) ?? null,
+    currentPage: (row.current_page as number) ?? null,
     summary: (row.summary as string) ?? null,
     categories,
     coverUrl: (row.cover_url as string) ?? null,
@@ -115,6 +116,9 @@ export const useBookStore = create<BookStore>((set, get) => ({
         }
         if (newStatus === "FINISHED" && !b.finishedAt) {
           updates.finishedAt = new Date().toISOString();
+        }
+        if (newStatus === "FINISHED" && b.pageCount) {
+          updates.currentPage = b.pageCount;
         }
         return { ...b, ...updates };
       }),

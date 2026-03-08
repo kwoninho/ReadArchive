@@ -12,6 +12,7 @@ function makeRawBook(overrides: Record<string, unknown> = {}) {
     published_year: null,
     isbn: null,
     page_count: null,
+    current_page: null,
     summary: null,
     categories: [],
     cover_url: null,

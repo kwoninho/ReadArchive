@@ -12,6 +12,7 @@ function makeBook(overrides: Partial<Book> = {}): Book {
     publishedYear: 2024,
     isbn: "9781234567890",
     pageCount: 300,
+    currentPage: null,
     summary: "요약",
     categories: [{ id: "category-1", name: "소설" }],
     coverUrl: null,
@@ -36,6 +37,7 @@ describe("mapBookFromDB", () => {
       published_year: 2024,
       isbn: "978-1234567890",
       page_count: 300,
+      current_page: 50,
       summary: "요약",
       book_categories: [
         {
@@ -62,6 +64,7 @@ describe("mapBookFromDB", () => {
       publishedYear: 2024,
       isbn: "978-1234567890",
       pageCount: 300,
+      currentPage: 50,
       summary: "요약",
       categories: [{ id: "category-1", name: "소설" }],
       coverUrl: "https://example.com/cover.jpg",
@@ -84,6 +87,7 @@ describe("mapBookFromDB", () => {
       published_year: null,
       isbn: null,
       page_count: null,
+      current_page: null,
       summary: null,
       book_categories: [
         { categories: { id: "cat-1", name: "소설" } },
@@ -115,6 +119,7 @@ describe("mapBookFromDB", () => {
       published_year: null,
       isbn: null,
       page_count: null,
+      current_page: null,
       summary: null,
       book_categories: [],
       cover_url: null,
@@ -131,6 +136,7 @@ describe("mapBookFromDB", () => {
     expect(book.publisher).toBeNull();
     expect(book.publishedYear).toBeNull();
     expect(book.isbn).toBeNull();
+    expect(book.currentPage).toBeNull();
     expect(book.categories).toEqual([]);
     expect(book.coverUrl).toBeNull();
     expect(book.rating).toBeNull();
