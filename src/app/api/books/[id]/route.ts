@@ -8,6 +8,7 @@ import {
   getStringArray,
   isValidBookStatus,
   isValidRating,
+  parseBookMetadataFields,
 } from "@/lib/api/helpers";
 import type { RouteParams } from "@/types";
 import { BOOK_WITH_CATEGORIES_SELECT } from "@/lib/books";
@@ -47,7 +48,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
   const { data: existingBook, error: existingBookError } = await supabase
     .from("books")
-    .select("id")
+    .select("id, current_page, page_count")
     .eq("id", id)
     .eq("user_id", user.id)
     .single();
@@ -85,6 +86,52 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   if (body.startedAt !== undefined) updates.started_at = body.startedAt;
   if (body.finishedAt !== undefined) updates.finished_at = body.finishedAt;
 
+  // 메타데이터 필드 (T-10.10)
+  const metaResult = parseBookMetadataFields(body);
+  if ("error" in metaResult) {
+    return Response.json({ error: metaResult.error }, { status: metaResult.status });
+  }
+  Object.assign(updates, metaResult.updates);
+
+  // currentPage 검증 (T-10.06)
+  if (body.currentPage !== undefined) {
+    if (body.currentPage !== null) {
+      if (typeof body.currentPage !== "number" || !Number.isInteger(body.currentPage) || body.currentPage < 0) {
+        return Response.json({ error: "현재 페이지는 0 이상의 정수여야 합니다" }, { status: 400 });
+      }
+      // pageCount 기준: 요청에 포함된 새 값 우선, 없으면 기존 DB 값
+      const effectivePageCount = (updates.page_count !== undefined
+        ? updates.page_count
+        : existingBook.page_count) as number | null;
+      if (effectivePageCount !== null && body.currentPage > effectivePageCount) {
+        return Response.json(
+          { error: `현재 페이지는 전체 페이지(${effectivePageCount}) 이하여야 합니다` },
+          { status: 400 }
+        );
+      }
+    }
+    updates.current_page = body.currentPage;
+  }
+
+  // pageCount 변경 시 currentPage 자동 보정 (T-10.10)
+  if (updates.page_count !== undefined && body.currentPage === undefined) {
+    const existingCurrentPage = existingBook.current_page as number | null;
+    const newPageCount = updates.page_count as number | null;
+    if (newPageCount !== null && existingCurrentPage !== null && existingCurrentPage > newPageCount) {
+      updates.current_page = newPageCount;
+    }
+  }
+
+  // FINISHED 전환 시 currentPage 자동 동기화 (T-10.06)
+  if (body.status === "FINISHED") {
+    const effectivePageCount = (updates.page_count !== undefined
+      ? updates.page_count
+      : existingBook.page_count) as number | null;
+    if (effectivePageCount !== null) {
+      updates.current_page = effectivePageCount;
+    }
+  }
+
   const categoryIds = parseCategoryIds(body);
   if (body.categoryIds !== undefined && !categoryIds) {
     return Response.json(
@@ -115,6 +162,12 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   }
 
   if (body.categoryIds !== undefined) {
+    // 기존 카테고리 백업 (insert 실패 시 복구용)
+    const { data: oldCategories } = await supabase
+      .from("book_categories")
+      .select("category_id")
+      .eq("book_id", id);
+
     const { error: deleteError } = await supabase
       .from("book_categories")
       .delete()
@@ -135,6 +188,12 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         );
 
       if (insertError) {
+        // 복구: 기존 카테고리 재삽입
+        if (oldCategories && oldCategories.length > 0) {
+          await supabase
+            .from("book_categories")
+            .insert(oldCategories.map((c) => ({ book_id: id, category_id: c.category_id })));
+        }
         return Response.json({ error: insertError.message }, { status: 500 });
       }
     }
