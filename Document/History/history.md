@@ -5,6 +5,71 @@
 
 ---
 
+## Phase 10: 책 상세 페이지 기능 확장
+
+### T-10.19 날짜/시간 포맷 유틸 공용화 - 2026-03-08
+- `src/lib/format.ts`: formatDateTime(KST YYYY-MM-DD HH:mm), formatDate, formatRelativeTime
+
+### T-10.18 카테고리 갱신 실패 복구 보강 - 2026-03-08
+- PATCH route에서 기존 카테고리 백업 후 insert 실패 시 복구 재삽입
+
+### T-10.17 책 입력 정규화 로직 공용화 - 2026-03-08
+- `src/lib/api/helpers.ts`: isValidPositiveInt, normalizeOptionalString, parseBookMetadataFields
+
+### T-10.16 상세 페이지 mutation 직렬화 정리 - 2026-03-08
+- book-detail.tsx에 mutatingRef 기반 직렬화, 공통 patchBook 헬퍼
+
+### T-10.15 BookDetail 편집 모드 테스트 추가 - 2026-03-08
+- book-detail-edit.test.tsx: 편집 전환, 취소, 진행률 조건부 표시, 메모 유지 (6 tests)
+
+### T-10.14 BookDetail 편집 모드 통합 - 2026-03-08
+- isEditing 상태, 수정 버튼(Pencil), BookEditForm 전환, 편집 중 버튼 숨김
+
+### T-10.13 BookEditForm 테스트 추가 - 2026-03-08
+- book-edit-form.test.tsx: 초기값, 카테고리 토글, 저장/취소, 빈 제목 비활성화 (6 tests)
+
+### T-10.12 BookEditForm 컴포넌트 구현 - 2026-03-08
+- 전체 메타데이터 편집 폼, 카테고리 Badge 토글, Textarea 컴포넌트 추가
+
+### T-10.11 PATCH API 메타데이터 테스트 추가 - 2026-03-08
+- helpers.test.ts 확장: parseBookMetadataFields, normalizeOptionalString, isValidPositiveInt (23+ tests)
+
+### T-10.10 PATCH API 메타데이터 필드 지원 - 2026-03-08
+- title, author, publisher, publishedYear, isbn, pageCount, summary, coverUrl, categoryIds 지원
+- pageCount 변경 시 currentPage 자동 보정
+
+### T-10.09 ReadingProgress 및 상세 페이지 통합 테스트 추가 - 2026-03-08
+- reading-progress.test.tsx: 진행률 바, 저장, Enter키, 음수/초과 방지 (7 tests)
+
+### T-10.08 ReadingProgress 컴포넌트 구현 - 2026-03-08
+- 프로그레스 바 + 백분율, 페이지 입력 + 저장 버튼, pageCount 없을 때 안내 문구
+
+### T-10.07 PATCH API currentPage 테스트 추가 - 2026-03-08
+- route.test.ts: 유효성 검증, 인증, 404, pageCount 참조 (9 tests)
+
+### T-10.06 PATCH API currentPage 지원 - 2026-03-08
+- currentPage 검증(0+, ≤pageCount), FINISHED 자동 동기화, moveBook 낙관적 업데이트
+
+### T-10.05 타입 및 매핑 테스트 보강 - 2026-03-08
+- makeBook/makeRawBook에 currentPage/current_page 추가, mapBookFromDB 테스트 보강
+
+### T-10.04 타입 및 매핑 업데이트 - 2026-03-08
+- Book 타입에 currentPage: number | null 추가, mapBookFromDB 매핑 추가
+
+### T-10.03 DB 마이그레이션 current_page 컬럼 추가 - 2026-03-08
+- 002_current_page.sql, schema.sql에 current_page INTEGER CHECK (>= 0) 추가
+
+### T-10.02 메모 작성 날짜 표시 테스트 추가 - 2026-03-08
+- note-list.test.tsx: formatDateTime/formatRelativeTime 출력 검증 (3 tests)
+
+### T-10.01 메모 작성 날짜 표시 적용 - 2026-03-08
+- note-list.tsx에서 공용 format 유틸 사용, 절대시간 + 상대시간 병행 표시
+
+### T-10.00 정책 확정 및 검증 기준 정리 - 2026-03-08
+- currentPage number|null, FINISHED 자동 동기화, 문자열 정규화, KST 날짜 포맷 정책 확정
+
+---
+
 ## Phase 9: 카테고리 UI
 
 ### T-9.04 카테고리별 필터링 기능 - 2026-03-08
