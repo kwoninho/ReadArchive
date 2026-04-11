@@ -14,6 +14,7 @@ interface GoogleBooksResponse {
       description?: string;
       categories?: string[];
       imageLinks?: { thumbnail?: string; smallThumbnail?: string };
+      language?: string;
     };
   }>;
 }
@@ -24,7 +25,6 @@ export async function searchBooksWithGoogleBooks(
   const params = new URLSearchParams({
     q: query,
     maxResults: "10",
-    langRestrict: "ko",
   });
   if (process.env.GOOGLE_BOOKS_API_KEY) {
     params.set("key", process.env.GOOGLE_BOOKS_API_KEY);
@@ -41,7 +41,14 @@ export async function searchBooksWithGoogleBooks(
     return [];
   }
 
-  return data.items.map((item) => {
+  // 한국어 도서 우선 정렬 (같은 그룹 내 기존 순서 유지)
+  const sorted = [...data.items].sort((a, b) => {
+    const aKo = a.volumeInfo.language === "ko" ? 0 : 1;
+    const bKo = b.volumeInfo.language === "ko" ? 0 : 1;
+    return aKo - bKo;
+  });
+
+  return sorted.map((item) => {
     const info = item.volumeInfo;
     const isbn13 = info.industryIdentifiers?.find(
       (id) => id.type === "ISBN_13"
