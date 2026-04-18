@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { requireAuth, isAuthError, safeParseJSON, getString } from "@/lib/api/helpers";
 import { searchBooksWithLLM } from "@/lib/search/llm-search";
 import { searchBooksWithGoogleBooks, fetchCovers } from "@/lib/search/google-books-search";
+import { fillCoversFromOpenLibrary } from "@/lib/search/open-library";
 import { getCachedSearch, setCachedSearch } from "@/lib/search/cache";
 import type { SearchResponse } from "@/types";
 
@@ -100,6 +101,8 @@ export async function POST(request: NextRequest) {
       } catch (e) {
         console.error("[search] cover enrichment error:", e);
       }
+      // 여전히 표지가 비어 있으면 ISBN 기반 Open Library Covers로 보강
+      fillCoversFromOpenLibrary(candidates);
       // 캐시 저장 (비동기, 에러 무시)
       setCachedSearch(query, candidates, "gemini").catch(() => {});
 
@@ -120,6 +123,8 @@ export async function POST(request: NextRequest) {
     const candidates = await searchBooksWithGoogleBooks(query);
     console.log(`[search] Google Books returned ${candidates.length} candidates`);
     if (candidates.length > 0) {
+      // 표지 없는 항목은 ISBN 기반 Open Library Covers로 보강
+      fillCoversFromOpenLibrary(candidates);
       // 캐시 저장 (비동기, 에러 무시)
       setCachedSearch(query, candidates, "google_books").catch(() => {});
 

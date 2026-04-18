@@ -1,22 +1,41 @@
 // Google Books API 검색 및 표지 이미지 조회
 import type { SearchCandidate } from "@/types";
 
+interface GoogleBooksVolumeInfo {
+  title?: string;
+  authors?: string[];
+  publisher?: string;
+  publishedDate?: string;
+  industryIdentifiers?: Array<{ type: string; identifier: string }>;
+  pageCount?: number;
+  description?: string;
+  categories?: string[];
+  imageLinks?: { thumbnail?: string; smallThumbnail?: string };
+  language?: string;
+}
+
 interface GoogleBooksResponse {
   totalItems: number;
-  items?: Array<{
-    volumeInfo: {
-      title?: string;
-      authors?: string[];
-      publisher?: string;
-      publishedDate?: string;
-      industryIdentifiers?: Array<{ type: string; identifier: string }>;
-      pageCount?: number;
-      description?: string;
-      categories?: string[];
-      imageLinks?: { thumbnail?: string; smallThumbnail?: string };
-      language?: string;
-    };
-  }>;
+  items?: Array<{ volumeInfo: GoogleBooksVolumeInfo }>;
+}
+
+const GOOGLE_BOOKS_ENDPOINT = "https://www.googleapis.com/books/v1/volumes";
+
+function pickThumbnail(imageLinks: GoogleBooksVolumeInfo["imageLinks"]): string | null {
+  const url = imageLinks?.thumbnail ?? imageLinks?.smallThumbnail;
+  return url ? url.replace("http://", "https://") : null;
+}
+
+function normalizeIsbn(raw: string): string {
+  return raw.replace(/[^0-9Xx]/g, "").toUpperCase();
+}
+
+function normalizeTitle(raw: string): string {
+  return raw
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim()
+    .replace(/\s+/g, " ");
 }
 
 export async function searchBooksWithGoogleBooks(
@@ -29,7 +48,7 @@ export async function searchBooksWithGoogleBooks(
   if (process.env.GOOGLE_BOOKS_API_KEY) {
     params.set("key", process.env.GOOGLE_BOOKS_API_KEY);
   }
-  const url = `https://www.googleapis.com/books/v1/volumes?${params}`;
+  const url = `${GOOGLE_BOOKS_ENDPOINT}?${params}`;
 
   const response = await fetch(url);
   if (!response.ok) {
@@ -50,15 +69,10 @@ export async function searchBooksWithGoogleBooks(
 
   return sorted.map((item) => {
     const info = item.volumeInfo;
-    const isbn13 = info.industryIdentifiers?.find(
-      (id) => id.type === "ISBN_13"
-    );
-    const isbn10 = info.industryIdentifiers?.find(
-      (id) => id.type === "ISBN_10"
-    );
+    const isbn13 = info.industryIdentifiers?.find((id) => id.type === "ISBN_13");
+    const isbn10 = info.industryIdentifiers?.find((id) => id.type === "ISBN_10");
     const isbn = isbn13?.identifier ?? isbn10?.identifier ?? "";
 
-    // 출판 연도 추출
     let publishedYear = 0;
     if (info.publishedDate) {
       const year = parseInt(info.publishedDate.substring(0, 4), 10);
@@ -74,58 +88,104 @@ export async function searchBooksWithGoogleBooks(
       pageCount: info.pageCount ?? 0,
       summary: info.description?.substring(0, 200) ?? "",
       category: info.categories?.[0] ?? "",
-      coverUrl: info.imageLinks?.thumbnail?.replace("http://", "https://") ?? null,
+      coverUrl: pickThumbnail(info.imageLinks),
     };
   });
 }
 
-// Google Books API로 표지 URL 조회 (제목+저자 매칭)
-export async function fetchCovers(
-  candidates: SearchCandidate[]
-): Promise<void> {
+// 후보별 타겟팅된 쿼리로 Google Books에서 표지를 보강한다.
+// 기존 구현은 여러 제목을 한 쿼리로 합쳐 정확도가 낮았다.
+export async function fetchCovers(candidates: SearchCandidate[]): Promise<void> {
   const withoutCover = candidates.filter((c) => !c.coverUrl);
   if (withoutCover.length === 0) return;
 
-  // 타이틀 기반으로 한 번만 검색
-  const query = withoutCover
-    .slice(0, 3)
-    .map((c) => c.title)
-    .join(" ");
-  const params = new URLSearchParams({
-    q: query,
-    maxResults: "20",
-  });
+  const targets = withoutCover.slice(0, 5);
+
+  await Promise.allSettled(
+    targets.map(async (candidate) => {
+      const url = buildCoverSearchUrl(candidate);
+      if (!url) return;
+
+      try {
+        const response = await fetch(url);
+        if (!response.ok) return;
+
+        const data: GoogleBooksResponse = await response.json();
+        if (!data.items || data.items.length === 0) return;
+
+        const cover = findBestCover(candidate, data.items);
+        if (cover && !candidate.coverUrl) {
+          candidate.coverUrl = cover;
+        }
+      } catch {
+        // 개별 후보 실패는 삼킨다. 다른 후보에 영향 없어야 함.
+      }
+    })
+  );
+}
+
+function buildCoverSearchUrl(c: SearchCandidate): string | null {
+  const params = new URLSearchParams({ maxResults: "5" });
+  const normIsbn = normalizeIsbn(c.isbn ?? "");
+  if (normIsbn) {
+    params.set("q", `isbn:${normIsbn}`);
+  } else if (c.title) {
+    const q = c.author
+      ? `intitle:"${c.title}" inauthor:"${c.author}"`
+      : `intitle:"${c.title}"`;
+    params.set("q", q);
+  } else {
+    return null;
+  }
   if (process.env.GOOGLE_BOOKS_API_KEY) {
     params.set("key", process.env.GOOGLE_BOOKS_API_KEY);
   }
-  const url = `https://www.googleapis.com/books/v1/volumes?${params}`;
+  return `${GOOGLE_BOOKS_ENDPOINT}?${params}`;
+}
 
-  const response = await fetch(url);
-  if (!response.ok) return;
+function findBestCover(
+  c: SearchCandidate,
+  items: NonNullable<GoogleBooksResponse["items"]>
+): string | null {
+  const normIsbn = normalizeIsbn(c.isbn ?? "");
+  const normTitle = normalizeTitle(c.title ?? "");
 
-  const data: GoogleBooksResponse = await response.json();
-  if (!data.items) return;
-
-  // ISBN → coverUrl, 제목(소문자) → coverUrl 매핑
-  const coverMap = new Map<string, string>();
-  for (const item of data.items) {
-    const info = item.volumeInfo;
-    const thumb = info.imageLinks?.thumbnail?.replace("http://", "https://");
-    if (!thumb) continue;
-
-    if (info.title) {
-      coverMap.set(info.title.toLowerCase(), thumb);
-    }
-    for (const id of info.industryIdentifiers ?? []) {
-      coverMap.set(id.identifier, thumb);
+  // 1) ISBN 정확 매칭 (하이픈/공백 차이 무시)
+  if (normIsbn) {
+    for (const item of items) {
+      const thumb = pickThumbnail(item.volumeInfo.imageLinks);
+      if (!thumb) continue;
+      const ids = item.volumeInfo.industryIdentifiers ?? [];
+      if (ids.some((id) => normalizeIsbn(id.identifier) === normIsbn)) {
+        return thumb;
+      }
     }
   }
 
-  // 매칭하여 coverUrl 채우기
-  for (const c of candidates) {
-    if (c.coverUrl) continue;
-    const byIsbn = c.isbn ? coverMap.get(c.isbn) : undefined;
-    const byTitle = coverMap.get(c.title.toLowerCase());
-    c.coverUrl = byIsbn ?? byTitle ?? c.coverUrl;
+  // 2) 제목 정규화 매칭 (대소문자/공백/구두점 차이 무시, 접두 일치 허용)
+  if (normTitle) {
+    for (const item of items) {
+      const thumb = pickThumbnail(item.volumeInfo.imageLinks);
+      if (!thumb) continue;
+      const itemTitle = normalizeTitle(item.volumeInfo.title ?? "");
+      if (!itemTitle) continue;
+      if (
+        itemTitle === normTitle ||
+        itemTitle.startsWith(normTitle) ||
+        normTitle.startsWith(itemTitle)
+      ) {
+        return thumb;
+      }
+    }
   }
+
+  // 3) ISBN 쿼리였다면 응답 자체가 이미 타겟팅된 결과이므로 첫 번째 썸네일 사용
+  if (normIsbn) {
+    for (const item of items) {
+      const thumb = pickThumbnail(item.volumeInfo.imageLinks);
+      if (thumb) return thumb;
+    }
+  }
+
+  return null;
 }
