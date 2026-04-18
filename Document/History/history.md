@@ -7,6 +7,22 @@
 
 ## 검색 기능 개선
 
+### Next.js Image 최적화 활성화 - 2026-04-18
+- `next.config.ts`: `images.remotePatterns`로 `books.google.com`, `books.google.co.kr`, `covers.openlibrary.org`, `**.googleusercontent.com` 화이트리스트
+- `book-card`, `book-detail`, `mobile-board`, `search-result-card`: `<Image unoptimized>` 제거
+- 표지 이미지 리사이즈/포맷 변환이 서버에서 처리되어 모바일 대역폭 절약
+
+### LLM 응답 런타임 검증 - 2026-04-18
+- `llm-search.ts`: `normalizeCandidate` 도입
+- `toStr`/`toInt` 헬퍼로 Gemini가 숫자를 문자열로 돌려주는 경우도 안전하게 coerce
+- 누락 필드는 기본값으로 채움, title 없는 항목은 결과에서 제외
+- 테스트 3건 추가: 숫자 coerce, 기본값, title 필터
+
+### 표지 검색 마감 - 2026-04-18
+- `open-library.ts`: `isValidIsbnLength`로 10/13자 아닌 ISBN은 URL 생성 스킵 (항상 404 방지)
+- `google-books-search.ts`: `fetchCovers` 타겟 5→10으로 확대 (LLM 반환 최대치에 맞춤)
+- Open Library 테스트 1건 추가
+
 ### 검색 레이트리미터 DB 이전 - 2026-04-18
 - `supabase/migrations/004_search_rate_limits.sql`: `search_rate_limits` 테이블 + `check_search_rate_limit(user_id, limit, window_seconds)` RPC
 - RPC는 `ON CONFLICT ... UPDATE`로 원자적 check-and-increment (1분 윈도우, 분당 10회)
