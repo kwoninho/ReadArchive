@@ -7,6 +7,29 @@
 
 ## 검색 기능 개선
 
+### 검색 레이트리미터 DB 이전 - 2026-04-18
+- `supabase/migrations/004_search_rate_limits.sql`: `search_rate_limits` 테이블 + `check_search_rate_limit(user_id, limit, window_seconds)` RPC
+- RPC는 `ON CONFLICT ... UPDATE`로 원자적 check-and-increment (1분 윈도우, 분당 10회)
+- 함수 권한 service_role만, 테이블 RLS 기본 차단
+- `src/lib/search/rate-limit.ts`: RPC 래퍼, 실패 시 fail-open + 로깅
+- `route.ts`: in-memory Map 제거 → `checkSearchRateLimit(user.id)` 호출
+- 테스트 4건: 허용/초과/RPC 오류/기본값
+- 효과: serverless 인스턴스 간 한도 공유 (기존 인스턴스별 10회 → 전역 10회)
+
+### 검색 캐시 UPSERT 전환 + source 제약 정정 - 2026-04-18
+- `supabase/migrations/003_search_cache_upsert.sql`: 중복 행 정리, `query` UNIQUE 제약, `source` CHECK `'llm'→'gemini'`로 정정
+- 기존 CHECK(`source IN ('llm','google_books')`) 위반으로 모든 Gemini 캐시가 silent reject되던 잠재 버그 해소
+- `cache.setCachedSearch`: insert → `upsert({onConflict:'query'})`, 오류 `console.error` 로깅
+- `schema.sql`: UNIQUE 제약과 source 집합 반영
+- `route.ts`: 캐시 저장 `.catch(()=>{})` 제거 → 로깅으로 가시화
+- 테스트 2건 추가 (upsert 시그니처, 오류 로깅)
+
+### 검색 API 타임아웃 추가 - 2026-04-18
+- Gemini `generateContent`: Promise.race + clearTimeout으로 6s 상한
+- Google Books 메인 검색: `AbortSignal.timeout(8000)`
+- `fetchCovers` 후보별 fetch: `AbortSignal.timeout(5000)`
+- 외부 API 지연 시 API route hang 방지, Google Books 폴백으로 빠르게 전환
+
 ### 표지 이미지 검색률 개선 - 2026-04-18
 - `fetchCovers()` 매칭 로직 강화: 후보별 타겟 쿼리(`isbn:` / `intitle+inauthor`), `Promise.allSettled`로 독립 처리
 - ISBN/제목 정규화 비교로 하이픈·대소문자·구두점 차이에도 매칭
