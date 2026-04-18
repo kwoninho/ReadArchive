@@ -101,7 +101,8 @@ export async function fetchCovers(candidates: SearchCandidate[]): Promise<void> 
   const withoutCover = candidates.filter((c) => !c.coverUrl);
   if (withoutCover.length === 0) return;
 
-  const targets = withoutCover.slice(0, 5);
+  // LLM이 최대 10개 반환 → 전부 보강 시도 (Google Books free quota 1000/day 충분)
+  const targets = withoutCover.slice(0, 10);
 
   await Promise.allSettled(
     targets.map(async (candidate) => {

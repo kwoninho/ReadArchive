@@ -61,6 +61,16 @@ describe("fillCoversFromOpenLibrary", () => {
     expect(candidates[0].coverUrl).toBeNull();
   });
 
+  it("스킵: ISBN 길이가 10/13이 아니면 변경하지 않는다 (항상 404)", () => {
+    const candidates = [
+      makeCandidate({ isbn: "123" }),
+      makeCandidate({ isbn: "123456789012" }),
+      makeCandidate({ isbn: "12345678901234" }),
+    ];
+    fillCoversFromOpenLibrary(candidates);
+    for (const c of candidates) expect(c.coverUrl).toBeNull();
+  });
+
   it("복수 후보를 각각 독립적으로 처리", () => {
     const candidates = [
       makeCandidate({ isbn: "9780596517748" }),
