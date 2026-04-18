@@ -53,7 +53,7 @@ CREATE TABLE search_cache (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   query TEXT NOT NULL UNIQUE,
   result JSONB NOT NULL,
-  source TEXT NOT NULL CHECK (source IN ('gemini', 'google_books')),
+  source TEXT NOT NULL CHECK (source IN ('gemini', 'google_books', 'naver')),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   expires_at TIMESTAMPTZ NOT NULL
 );

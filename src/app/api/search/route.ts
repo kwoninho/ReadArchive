@@ -1,8 +1,9 @@
-// 책 검색 API: 캐시 → LLM → Google Books 순서
+// 책 검색 API: 캐시 → LLM → Google Books → Naver 순서
 import { NextRequest } from "next/server";
 import { requireAuth, isAuthError, safeParseJSON, getString } from "@/lib/api/helpers";
 import { searchBooksWithLLM } from "@/lib/search/llm-search";
 import { searchBooksWithGoogleBooks, fetchCovers } from "@/lib/search/google-books-search";
+import { searchBooksWithNaver } from "@/lib/search/naver-book";
 import { fillCoversFromOpenLibrary } from "@/lib/search/open-library";
 import { getCachedSearch, setCachedSearch } from "@/lib/search/cache";
 import { checkSearchRateLimit } from "@/lib/search/rate-limit";
@@ -118,7 +119,31 @@ export async function POST(request: NextRequest) {
     console.error("[search] Google Books error:", e);
   }
 
-  // 4. 모든 검색 실패
+  // 4. 네이버 책 검색 폴백 (한국 도서 롱테일 커버)
+  try {
+    console.log("[search] trying Naver Book fallback...");
+    const candidates = await searchBooksWithNaver(query);
+    console.log(`[search] Naver returned ${candidates.length} candidates`);
+    if (candidates.length > 0) {
+      // 표지 없는 항목은 ISBN 기반 Open Library Covers로 보강
+      fillCoversFromOpenLibrary(candidates);
+      // 캐시 저장 (비동기, 실패 시 로깅)
+      setCachedSearch(query, candidates, "naver").catch((e) =>
+        console.error("[search] naver cache save failed:", e)
+      );
+
+      const response: SearchResponse = {
+        candidates,
+        source: "naver",
+        cached: false,
+      };
+      return Response.json(response);
+    }
+  } catch (e) {
+    console.error("[search] Naver error:", e);
+  }
+
+  // 5. 모든 검색 실패
   console.warn("[search] all sources failed for query:", query);
   const response: SearchResponse = {
     candidates: [],

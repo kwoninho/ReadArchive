@@ -50,7 +50,7 @@ export interface SearchCandidate {
 
 export interface SearchResponse {
   candidates: SearchCandidate[];
-  source: "gemini" | "google_books" | "cache" | "none";
+  source: "gemini" | "google_books" | "naver" | "cache" | "none";
   cached: boolean;
 }
 
