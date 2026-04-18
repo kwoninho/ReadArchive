@@ -1,7 +1,8 @@
 -- 검색 API 레이트리미터를 서버 인스턴스 공유 가능한 DB 기반으로 이전
 -- 기존 in-memory Map은 serverless 인스턴스 수에 비례해 실제 제한이 느슨해짐
+-- 무중단 배포를 위해 idempotent하게 작성
 
-CREATE TABLE search_rate_limits (
+CREATE TABLE IF NOT EXISTS search_rate_limits (
   user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   window_start TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   count INTEGER NOT NULL DEFAULT 0
