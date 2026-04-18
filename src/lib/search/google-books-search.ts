@@ -20,6 +20,8 @@ interface GoogleBooksResponse {
 }
 
 const GOOGLE_BOOKS_ENDPOINT = "https://www.googleapis.com/books/v1/volumes";
+const SEARCH_TIMEOUT_MS = 8000;
+const COVER_TIMEOUT_MS = 5000;
 
 function pickThumbnail(imageLinks: GoogleBooksVolumeInfo["imageLinks"]): string | null {
   const url = imageLinks?.thumbnail ?? imageLinks?.smallThumbnail;
@@ -50,7 +52,7 @@ export async function searchBooksWithGoogleBooks(
   }
   const url = `${GOOGLE_BOOKS_ENDPOINT}?${params}`;
 
-  const response = await fetch(url);
+  const response = await fetch(url, { signal: AbortSignal.timeout(SEARCH_TIMEOUT_MS) });
   if (!response.ok) {
     throw new Error(`Google Books API 오류: ${response.status}`);
   }
@@ -107,7 +109,7 @@ export async function fetchCovers(candidates: SearchCandidate[]): Promise<void> 
       if (!url) return;
 
       try {
-        const response = await fetch(url);
+        const response = await fetch(url, { signal: AbortSignal.timeout(COVER_TIMEOUT_MS) });
         if (!response.ok) return;
 
         const data: GoogleBooksResponse = await response.json();

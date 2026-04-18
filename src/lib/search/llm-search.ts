@@ -38,8 +38,21 @@ interface LLMSearchResult {
   }>;
 }
 
+// Gemini 응답 지연 시 Google Books 폴백으로 빠르게 전환하기 위한 상한
+const GEMINI_TIMEOUT_MS = 6000;
+
 // 싱글턴 Gemini 모델 (지연 초기화)
 let geminiModel: GenerativeModel | null = null;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} 타임아웃 (${ms}ms)`)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+}
 
 function getGeminiModel(): GenerativeModel {
   if (!geminiModel) {
@@ -62,7 +75,11 @@ export async function searchBooksWithLLM(
   const prompt = SEARCH_PROMPT.replace("{query}", query);
 
   console.log("[gemini] sending request, query:", query);
-  const result = await model.generateContent(prompt);
+  const result = await withTimeout(
+    model.generateContent(prompt),
+    GEMINI_TIMEOUT_MS,
+    "Gemini"
+  );
 
   const content = result.response.text();
   console.log("[gemini] raw response:", content.substring(0, 500));
