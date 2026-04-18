@@ -7,6 +7,14 @@
 
 BEGIN;
 
+-- 0. CHECK를 일시적으로 완화 (UPDATE 중 새 값 'gemini'가 reject되지 않도록)
+ALTER TABLE search_cache
+  DROP CONSTRAINT IF EXISTS search_cache_source_check;
+
+ALTER TABLE search_cache
+  ADD CONSTRAINT search_cache_source_check
+  CHECK (source IN ('llm', 'gemini', 'google_books'));
+
 -- 1. 과거 'llm' 라벨 행을 현재 코드 라벨 'gemini'로 정규화 (해당 행 없으면 no-op)
 UPDATE search_cache SET source = 'gemini' WHERE source = 'llm';
 
@@ -36,9 +44,9 @@ BEGIN
   END IF;
 END$$;
 
--- 4. source CHECK 제약 정정 ('llm' → 'gemini')
+-- 4. source CHECK를 최종 집합으로 좁힘 ('llm' 제거)
 ALTER TABLE search_cache
-  DROP CONSTRAINT IF EXISTS search_cache_source_check;
+  DROP CONSTRAINT search_cache_source_check;
 
 ALTER TABLE search_cache
   ADD CONSTRAINT search_cache_source_check
