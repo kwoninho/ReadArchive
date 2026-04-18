@@ -7,6 +7,7 @@ import { useBookStore } from "@/stores/book-store";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { mapBookFromDB } from "@/stores/book-store";
+import { isOptimizable } from "@/lib/image";
 import type { Book, BookStatus } from "@/types";
 
 const TABS: { status: BookStatus; label: string }[] = [
@@ -88,6 +89,7 @@ export function MobileBoard({ onAddClick }: MobileBoardProps) {
                       fill
                       className="object-cover"
                       sizes="40px"
+                      unoptimized={!isOptimizable(book.coverUrl)}
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center text-[8px]">📚</div>

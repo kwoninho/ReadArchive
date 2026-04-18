@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { isOptimizable } from "@/lib/image";
 import type { SearchCandidate } from "@/types";
 
 interface SearchResultCardProps {
@@ -31,6 +32,7 @@ export function SearchResultCard({
             fill
             className="object-cover"
             sizes="56px"
+            unoptimized={!isOptimizable(candidate.coverUrl)}
             onError={() => setImgError(true)}
           />
         ) : (

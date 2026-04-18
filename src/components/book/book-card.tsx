@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { CategoryBadge } from "./category-badge";
+import { isOptimizable } from "@/lib/image";
 import type { Book } from "@/types";
 
 interface BookCardProps {
@@ -42,6 +43,7 @@ export function BookCard({ book }: BookCardProps) {
             fill
             className="object-cover"
             sizes="44px"
+            unoptimized={!isOptimizable(book.coverUrl)}
             onError={() => setImgError(true)}
           />
         ) : (

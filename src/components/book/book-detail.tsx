@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { mapBookFromDB } from "@/stores/book-store";
 import { CategoryBadge } from "./category-badge";
 import { formatDate } from "@/lib/format";
+import { isOptimizable } from "@/lib/image";
 import type { Book, BookStatus } from "@/types";
 
 interface BookDetailProps {
@@ -188,6 +189,7 @@ export function BookDetail({ book: rawBook }: BookDetailProps) {
                   fill
                   className="object-cover"
                   sizes="128px"
+                  unoptimized={!isOptimizable(book.coverUrl)}
                 />
               ) : (
                 <div className="flex h-full items-center justify-center text-2xl">
