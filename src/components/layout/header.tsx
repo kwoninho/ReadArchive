@@ -92,7 +92,14 @@ export function Header({ user }: HeaderProps) {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+              {/* Radix가 useId로 생성하는 id는 React 19 + Next App Router의
+                  Suspense 컨텍스트 차이로 SSR/CSR 불일치가 발생할 수 있어
+                  기능에 영향 없는 id 속성에 대해 경고를 억제한다 (공식 권장). */}
+              <Button
+                variant="ghost"
+                className="relative h-8 w-8 rounded-full"
+                suppressHydrationWarning
+              >
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={avatarUrl} alt={displayName} />
                   <AvatarFallback>{initials}</AvatarFallback>
