@@ -51,3 +51,6 @@ tsconfig.tsbuildinfo
 
 # Ralph loop state (plugin runtime)
 .claude/ralph-loop.local.md
+
+# Claude local settings
+.claude/settings.local.json
