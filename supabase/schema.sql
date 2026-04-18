@@ -58,6 +58,13 @@ CREATE TABLE search_cache (
   expires_at TIMESTAMPTZ NOT NULL
 );
 
+-- 검색 API 레이트리미터 (인스턴스 공유용)
+CREATE TABLE search_rate_limits (
+  user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  window_start TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  count INTEGER NOT NULL DEFAULT 0
+);
+
 -- 인덱스
 CREATE INDEX idx_books_user_id ON books(user_id);
 CREATE INDEX idx_books_status ON books(user_id, status);
@@ -162,3 +169,42 @@ CREATE POLICY "Authenticated users can read cache"
   ON search_cache FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "Service role can insert cache"
   ON search_cache FOR INSERT WITH CHECK (true);
+
+-- search_rate_limits: service role만 접근 (정책 미정의 → 기본 차단)
+ALTER TABLE search_rate_limits ENABLE ROW LEVEL SECURITY;
+
+-- 원자적 레이트리밋 check-and-increment
+CREATE OR REPLACE FUNCTION check_search_rate_limit(
+  p_user_id UUID,
+  p_limit INTEGER,
+  p_window_seconds INTEGER
+)
+RETURNS BOOLEAN AS $$
+DECLARE
+  v_now TIMESTAMPTZ := NOW();
+  v_count INTEGER;
+BEGIN
+  INSERT INTO search_rate_limits (user_id, window_start, count)
+  VALUES (p_user_id, v_now, 1)
+  ON CONFLICT (user_id) DO UPDATE
+  SET
+    window_start = CASE
+      WHEN search_rate_limits.window_start + (p_window_seconds || ' seconds')::INTERVAL < v_now
+        THEN v_now
+      ELSE search_rate_limits.window_start
+    END,
+    count = CASE
+      WHEN search_rate_limits.window_start + (p_window_seconds || ' seconds')::INTERVAL < v_now
+        THEN 1
+      ELSE search_rate_limits.count + 1
+    END
+  RETURNING count INTO v_count;
+
+  RETURN v_count <= p_limit;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+REVOKE ALL ON FUNCTION check_search_rate_limit(UUID, INTEGER, INTEGER) FROM PUBLIC;
+REVOKE ALL ON FUNCTION check_search_rate_limit(UUID, INTEGER, INTEGER) FROM anon;
+REVOKE ALL ON FUNCTION check_search_rate_limit(UUID, INTEGER, INTEGER) FROM authenticated;
+GRANT EXECUTE ON FUNCTION check_search_rate_limit(UUID, INTEGER, INTEGER) TO service_role;

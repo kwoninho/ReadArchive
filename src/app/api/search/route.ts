@@ -5,33 +5,8 @@ import { searchBooksWithLLM } from "@/lib/search/llm-search";
 import { searchBooksWithGoogleBooks, fetchCovers } from "@/lib/search/google-books-search";
 import { fillCoversFromOpenLibrary } from "@/lib/search/open-library";
 import { getCachedSearch, setCachedSearch } from "@/lib/search/cache";
+import { checkSearchRateLimit } from "@/lib/search/rate-limit";
 import type { SearchResponse } from "@/types";
-
-// 간단한 인메모리 Rate Limiter (사용자당 분당 10회)
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-
-function checkRateLimit(userId: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(userId);
-
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(userId, { count: 1, resetAt: now + 60_000 });
-    return true;
-  }
-
-  if (entry.count >= 10) return false;
-  entry.count++;
-  return true;
-}
-
-// 만료 항목 정리 (1000개 초과 시)
-function pruneRateLimitMap() {
-  if (rateLimitMap.size <= 1000) return;
-  const now = Date.now();
-  for (const [key, entry] of rateLimitMap) {
-    if (now > entry.resetAt) rateLimitMap.delete(key);
-  }
-}
 
 export async function POST(request: NextRequest) {
   // 인증 확인
@@ -39,9 +14,9 @@ export async function POST(request: NextRequest) {
   if (isAuthError(auth)) return auth;
   const { user } = auth;
 
-  // Rate limit 확인
-  pruneRateLimitMap();
-  if (!checkRateLimit(user.id)) {
+  // Rate limit 확인 (DB 기반, 사용자당 분당 10회)
+  const allowed = await checkSearchRateLimit(user.id, 10, 60);
+  if (!allowed) {
     return Response.json(
       { error: "요청이 너무 많습니다. 잠시 후 다시 시도해주세요." },
       { status: 429 }
@@ -103,7 +78,7 @@ export async function POST(request: NextRequest) {
       }
       // 여전히 표지가 비어 있으면 ISBN 기반 Open Library Covers로 보강
       fillCoversFromOpenLibrary(candidates);
-      // 캐시 저장 (비동기, 에러 무시)
+      // 캐시 저장 (비동기, 실패 시 로깅)
       setCachedSearch(query, candidates, "gemini").catch((e) =>
         console.error("[search] gemini cache save failed:", e)
       );
@@ -127,7 +102,7 @@ export async function POST(request: NextRequest) {
     if (candidates.length > 0) {
       // 표지 없는 항목은 ISBN 기반 Open Library Covers로 보강
       fillCoversFromOpenLibrary(candidates);
-      // 캐시 저장 (비동기, 에러 무시)
+      // 캐시 저장 (비동기, 실패 시 로깅)
       setCachedSearch(query, candidates, "google_books").catch((e) =>
         console.error("[search] google_books cache save failed:", e)
       );
