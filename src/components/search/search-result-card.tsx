@@ -31,7 +31,6 @@ export function SearchResultCard({
             fill
             className="object-cover"
             sizes="56px"
-            unoptimized
             onError={() => setImgError(true)}
           />
         ) : (

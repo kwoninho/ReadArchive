@@ -188,7 +188,6 @@ export function BookDetail({ book: rawBook }: BookDetailProps) {
                   fill
                   className="object-cover"
                   sizes="128px"
-                  unoptimized
                 />
               ) : (
                 <div className="flex h-full items-center justify-center text-2xl">

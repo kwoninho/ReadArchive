@@ -42,7 +42,6 @@ export function BookCard({ book }: BookCardProps) {
             fill
             className="object-cover"
             sizes="44px"
-            unoptimized
             onError={() => setImgError(true)}
           />
         ) : (

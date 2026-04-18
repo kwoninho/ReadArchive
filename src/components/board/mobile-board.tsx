@@ -88,7 +88,6 @@ export function MobileBoard({ onAddClick }: MobileBoardProps) {
                       fill
                       className="object-cover"
                       sizes="40px"
-                      unoptimized
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center text-[8px]">📚</div>
