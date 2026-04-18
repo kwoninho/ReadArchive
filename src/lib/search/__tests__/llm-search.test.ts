@@ -85,4 +85,77 @@ describe("searchBooksWithLLM", () => {
       "LLM 응답 형식이 올바르지 않습니다"
     );
   });
+
+  it("coerces numeric fields from strings (publishedYear, pageCount)", async () => {
+    mockGenerateContent.mockResolvedValue({
+      response: {
+        text: () =>
+          JSON.stringify({
+            candidates: [
+              {
+                title: "Book",
+                author: "A",
+                publisher: "P",
+                publishedYear: "2020",
+                isbn: "1234567890",
+                pageCount: "300",
+                summary: "s",
+                category: "c",
+              },
+            ],
+          }),
+      },
+    });
+
+    const searchBooksWithLLM = await getSearchFn();
+    const result = await searchBooksWithLLM("test");
+    expect(result[0].publishedYear).toBe(2020);
+    expect(result[0].pageCount).toBe(300);
+  });
+
+  it("defaults missing fields to empty/zero and keeps coverUrl null", async () => {
+    mockGenerateContent.mockResolvedValue({
+      response: {
+        text: () =>
+          JSON.stringify({
+            candidates: [{ title: "Only Title" }],
+          }),
+      },
+    });
+
+    const searchBooksWithLLM = await getSearchFn();
+    const result = await searchBooksWithLLM("test");
+    expect(result[0]).toEqual({
+      title: "Only Title",
+      author: "",
+      publisher: "",
+      publishedYear: 0,
+      isbn: "",
+      pageCount: 0,
+      summary: "",
+      category: "",
+      coverUrl: null,
+    });
+  });
+
+  it("filters out candidates without a title", async () => {
+    mockGenerateContent.mockResolvedValue({
+      response: {
+        text: () =>
+          JSON.stringify({
+            candidates: [
+              { title: "Good" },
+              { title: "" },
+              { author: "no title" },
+              { title: "   " },
+              { title: "Also Good" },
+            ],
+          }),
+      },
+    });
+
+    const searchBooksWithLLM = await getSearchFn();
+    const result = await searchBooksWithLLM("test");
+    expect(result.map((c) => c.title)).toEqual(["Good", "Also Good"]);
+  });
 });
