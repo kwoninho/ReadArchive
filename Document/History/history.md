@@ -5,6 +5,18 @@
 
 ---
 
+## 검색 기능 개선
+
+### 표지 이미지 검색률 개선 - 2026-04-18
+- `fetchCovers()` 매칭 로직 강화: 후보별 타겟 쿼리(`isbn:` / `intitle+inauthor`), `Promise.allSettled`로 독립 처리
+- ISBN/제목 정규화 비교로 하이픈·대소문자·구두점 차이에도 매칭
+- `thumbnail` 없을 때 `smallThumbnail` fallback
+- 신규 `src/lib/search/open-library.ts`: ISBN 기반 Open Library Covers URL 구성 fallback
+- `/api/search` Gemini/Google Books 두 경로 모두 Open Library 보강 연결
+- 테스트 14건 추가 (fetchCovers 8, open-library 7, searchBooksWithGoogleBooks smallThumbnail 2)
+
+---
+
 ## Phase 10: 책 상세 페이지 기능 확장
 
 ### T-10.19 날짜/시간 포맷 유틸 공용화 - 2026-03-08
