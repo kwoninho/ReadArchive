@@ -104,7 +104,9 @@ export async function POST(request: NextRequest) {
       // 여전히 표지가 비어 있으면 ISBN 기반 Open Library Covers로 보강
       fillCoversFromOpenLibrary(candidates);
       // 캐시 저장 (비동기, 에러 무시)
-      setCachedSearch(query, candidates, "gemini").catch(() => {});
+      setCachedSearch(query, candidates, "gemini").catch((e) =>
+        console.error("[search] gemini cache save failed:", e)
+      );
 
       const response: SearchResponse = {
         candidates,
@@ -126,7 +128,9 @@ export async function POST(request: NextRequest) {
       // 표지 없는 항목은 ISBN 기반 Open Library Covers로 보강
       fillCoversFromOpenLibrary(candidates);
       // 캐시 저장 (비동기, 에러 무시)
-      setCachedSearch(query, candidates, "google_books").catch(() => {});
+      setCachedSearch(query, candidates, "google_books").catch((e) =>
+        console.error("[search] google_books cache save failed:", e)
+      );
 
       const response: SearchResponse = {
         candidates,

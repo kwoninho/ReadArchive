@@ -19,7 +19,7 @@ describe("normalizeQuery", () => {
 // --- Mocked tests for getCachedSearch / setCachedSearch ---
 
 const mockSingle = vi.fn();
-const mockInsert = vi.fn();
+const mockUpsert = vi.fn();
 
 const mockChain = {
   from: vi.fn(() => mockChain),
@@ -29,7 +29,7 @@ const mockChain = {
   order: vi.fn(() => mockChain),
   limit: vi.fn(() => mockChain),
   single: mockSingle,
-  insert: mockInsert,
+  upsert: mockUpsert,
 };
 
 vi.mock("@supabase/supabase-js", () => ({
@@ -108,18 +108,33 @@ describe("setCachedSearch", () => {
     return mod.setCachedSearch;
   }
 
-  it("inserts with normalized query and 30-day expiry", async () => {
-    mockInsert.mockResolvedValue({ error: null });
+  it("upserts with normalized query, 30-day expiry, and onConflict=query", async () => {
+    mockUpsert.mockResolvedValue({ error: null });
 
     const setCachedSearch = await getSetCachedSearchFn();
     await setCachedSearch("  Test Query  ", [], "gemini");
 
-    expect(mockInsert).toHaveBeenCalledWith({
-      query: "test query",
-      result: [],
-      source: "gemini",
-      expires_at: "2024-07-01T00:00:00.000Z",
-    });
+    expect(mockUpsert).toHaveBeenCalledWith(
+      {
+        query: "test query",
+        result: [],
+        source: "gemini",
+        created_at: "2024-06-01T00:00:00.000Z",
+        expires_at: "2024-07-01T00:00:00.000Z",
+      },
+      { onConflict: "query" }
+    );
+  });
+
+  it("logs upsert errors instead of silently dropping", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    mockUpsert.mockResolvedValue({ error: { message: "duplicate key" } });
+
+    const setCachedSearch = await getSetCachedSearchFn();
+    await setCachedSearch("q", [], "gemini");
+
+    expect(errorSpy).toHaveBeenCalledWith("[cache] upsert error:", "duplicate key");
+    errorSpy.mockRestore();
   });
 });
 

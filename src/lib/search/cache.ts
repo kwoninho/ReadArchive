@@ -45,6 +45,7 @@ export async function getCachedSearch(
 }
 
 // 검색 결과를 캐시에 저장 (만료: 30일)
+// query UNIQUE 제약 기반 UPSERT로 중복 행 누적 방지
 export async function setCachedSearch(
   query: string,
   result: SearchCandidate[],
@@ -55,10 +56,20 @@ export async function setCachedSearch(
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 30);
 
-  await supabase.from("search_cache").insert({
-    query: normalized,
-    result,
-    source,
-    expires_at: expiresAt.toISOString(),
-  });
+  const { error } = await supabase
+    .from("search_cache")
+    .upsert(
+      {
+        query: normalized,
+        result,
+        source,
+        created_at: new Date().toISOString(),
+        expires_at: expiresAt.toISOString(),
+      },
+      { onConflict: "query" }
+    );
+
+  if (error) {
+    console.error("[cache] upsert error:", error.message);
+  }
 }
