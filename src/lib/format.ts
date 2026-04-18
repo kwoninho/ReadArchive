@@ -12,12 +12,19 @@ export function formatDateTime(dateStr: string): string {
   return `${year}-${month}-${day} ${hours}:${minutes}`;
 }
 
-/** KST 기준 날짜 포맷: "YYYY. M. D." (한국어 로케일) */
+/** KST 기준 날짜 포맷: "YYYY. M. D." (TZ 고정 — SSR/CSR 하이드레이션 안전) */
 export function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("ko-KR");
+  const d = new Date(dateStr);
+  const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+  const year = kst.getUTCFullYear();
+  const month = kst.getUTCMonth() + 1;
+  const day = kst.getUTCDate();
+  return `${year}. ${month}. ${day}.`;
 }
 
-/** 상대 시간 표시: "방금 전", "5분 전", "3시간 전", "7일 전" 등 */
+/** 상대 시간 표시: "방금 전", "5분 전", "3시간 전", "7일 전" 등
+ *  주의: Date.now()에 의존하므로 SSR 출력이 CSR과 다를 수 있음.
+ *  호출 측은 마운트 이후(useEffect 내부)에서만 렌더하거나 suppressHydrationWarning 사용. */
 export function formatRelativeTime(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const minutes = Math.floor(diff / 60_000);
@@ -27,5 +34,5 @@ export function formatRelativeTime(dateStr: string): string {
   if (hours < 24) return `${hours}시간 전`;
   const days = Math.floor(hours / 24);
   if (days < 30) return `${days}일 전`;
-  return new Date(dateStr).toLocaleDateString("ko-KR");
+  return formatDate(dateStr);
 }

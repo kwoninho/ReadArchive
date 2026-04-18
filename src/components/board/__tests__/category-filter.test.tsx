@@ -15,6 +15,7 @@ function makeBook(overrides: Partial<Book> = {}): Book {
     publishedYear: null,
     isbn: null,
     pageCount: null,
+    currentPage: null,
     summary: null,
     categories: [],
     coverUrl: null,

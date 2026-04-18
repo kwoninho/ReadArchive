@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { CategoryBadge } from "./category-badge";
 import { isOptimizable } from "@/lib/image";
+import { formatDate } from "@/lib/format";
 import type { Book } from "@/types";
 
 interface BookCardProps {
@@ -65,7 +66,7 @@ export function BookCard({ book }: BookCardProps) {
         {/* 상태별 추가 정보 */}
         {book.status === "READING" && book.startedAt && (
           <p className="text-xs text-muted-foreground">
-            시작: {new Date(book.startedAt).toLocaleDateString("ko-KR")}
+            시작: {formatDate(book.startedAt)}
           </p>
         )}
         {book.status === "FINISHED" && <StarRatingDisplay rating={book.rating} />}

@@ -10,6 +10,7 @@ global.fetch = mockFetch;
 function makeBook(overrides: Partial<Book> = {}): Book {
   return {
     id: "book-1",
+    userId: "user-1",
     title: "Test Book",
     author: "Author",
     publisher: "Publisher",
