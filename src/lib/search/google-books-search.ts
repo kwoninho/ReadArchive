@@ -1,5 +1,6 @@
 // Google Books API 검색 및 표지 이미지 조회
 import type { SearchCandidate } from "@/types";
+import { isKoreanQuery } from "./language";
 
 interface GoogleBooksVolumeInfo {
   title?: string;
@@ -47,6 +48,10 @@ export async function searchBooksWithGoogleBooks(
     q: query,
     maxResults: "10",
   });
+  // 한글 쿼리면 한국어 도서로 제한, 그 외는 글로벌 검색
+  if (isKoreanQuery(query)) {
+    params.set("langRestrict", "ko");
+  }
   if (process.env.GOOGLE_BOOKS_API_KEY) {
     params.set("key", process.env.GOOGLE_BOOKS_API_KEY);
   }
@@ -62,8 +67,14 @@ export async function searchBooksWithGoogleBooks(
     return [];
   }
 
+  // ko/en 외 언어 제외 (language 필드 없으면 통과)
+  const allowed = data.items.filter((item) => {
+    const lang = item.volumeInfo.language;
+    return !lang || lang === "ko" || lang === "en";
+  });
+
   // 한국어 도서 우선 정렬 (같은 그룹 내 기존 순서 유지)
-  const sorted = [...data.items].sort((a, b) => {
+  const sorted = [...allowed].sort((a, b) => {
     const aKo = a.volumeInfo.language === "ko" ? 0 : 1;
     const bKo = b.volumeInfo.language === "ko" ? 0 : 1;
     return aKo - bKo;

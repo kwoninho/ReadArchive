@@ -1,4 +1,4 @@
-// 책 검색 API: 캐시 → LLM → Google Books → Naver 순서
+// 책 검색 API: 캐시 → Naver → Google Books → Gemini(fallback) → 요약 보강
 import { NextRequest } from "next/server";
 import { requireAuth, isAuthError, safeParseJSON, getString } from "@/lib/api/helpers";
 import { searchBooksWithLLM } from "@/lib/search/llm-search";
@@ -7,7 +7,42 @@ import { searchBooksWithNaver } from "@/lib/search/naver-book";
 import { fillCoversFromOpenLibrary } from "@/lib/search/open-library";
 import { getCachedSearch, setCachedSearch } from "@/lib/search/cache";
 import { checkSearchRateLimit } from "@/lib/search/rate-limit";
-import type { SearchResponse } from "@/types";
+import { filterByLanguage } from "@/lib/search/language";
+import { enrichSummaries } from "@/lib/search/llm-summary";
+import type { SearchCandidate, SearchResponse } from "@/types";
+
+type Source = "naver" | "google_books" | "gemini";
+
+async function finalize(
+  query: string,
+  candidates: SearchCandidate[],
+  source: Source
+): Promise<SearchResponse> {
+  // 표지 보강: Gemini 결과는 Google Books에서 타겟 조회
+  if (source === "gemini") {
+    try {
+      await fetchCovers(candidates);
+    } catch (e) {
+      console.error("[search] cover enrichment error:", e);
+    }
+  }
+  // 표지 없는 항목은 Open Library로 최종 보강
+  fillCoversFromOpenLibrary(candidates);
+
+  // 상위 3개 요약을 LLM으로 병렬 보강 (요약이 부실한 경우만)
+  try {
+    await enrichSummaries(candidates, 3);
+  } catch (e) {
+    console.error("[search] summary enrichment error:", e);
+  }
+
+  // 캐시 저장은 fire-and-forget
+  setCachedSearch(query, candidates, source).catch((e) =>
+    console.error(`[search] ${source} cache save failed:`, e)
+  );
+
+  return { candidates, source, cached: false };
+}
 
 export async function POST(request: NextRequest) {
   // 인증 확인
@@ -65,82 +100,42 @@ export async function POST(request: NextRequest) {
     console.error("[search] cache error:", e);
   }
 
-  // 2. LLM 검색 시도
+  // 2. Naver 우선 (국내 커버리지 최고)
   try {
-    console.log("[search] trying Gemini...");
-    const candidates = await searchBooksWithLLM(query);
-    console.log(`[search] Gemini returned ${candidates.length} candidates`);
+    console.log("[search] trying Naver...");
+    const raw = await searchBooksWithNaver(query);
+    const candidates = filterByLanguage(raw);
+    console.log(`[search] Naver returned ${raw.length} → ${candidates.length} (lang filtered)`);
     if (candidates.length > 0) {
-      // 표지 이미지 보강 (Google Books에서 조회)
-      try {
-        await fetchCovers(candidates);
-      } catch (e) {
-        console.error("[search] cover enrichment error:", e);
-      }
-      // 여전히 표지가 비어 있으면 ISBN 기반 Open Library Covers로 보강
-      fillCoversFromOpenLibrary(candidates);
-      // 캐시 저장 (비동기, 실패 시 로깅)
-      setCachedSearch(query, candidates, "gemini").catch((e) =>
-        console.error("[search] gemini cache save failed:", e)
-      );
-
-      const response: SearchResponse = {
-        candidates,
-        source: "gemini",
-        cached: false,
-      };
-      return Response.json(response);
+      return Response.json(await finalize(query, candidates, "naver"));
     }
   } catch (e) {
-    console.error("[search] Gemini error:", e);
+    console.error("[search] Naver error:", e);
   }
 
-  // 3. Google Books API 폴백
+  // 3. Google Books 폴백
   try {
-    console.log("[search] trying Google Books fallback...");
-    const candidates = await searchBooksWithGoogleBooks(query);
-    console.log(`[search] Google Books returned ${candidates.length} candidates`);
+    console.log("[search] trying Google Books...");
+    const raw = await searchBooksWithGoogleBooks(query);
+    const candidates = filterByLanguage(raw);
+    console.log(`[search] Google Books returned ${raw.length} → ${candidates.length} (lang filtered)`);
     if (candidates.length > 0) {
-      // 표지 없는 항목은 ISBN 기반 Open Library Covers로 보강
-      fillCoversFromOpenLibrary(candidates);
-      // 캐시 저장 (비동기, 실패 시 로깅)
-      setCachedSearch(query, candidates, "google_books").catch((e) =>
-        console.error("[search] google_books cache save failed:", e)
-      );
-
-      const response: SearchResponse = {
-        candidates,
-        source: "google_books",
-        cached: false,
-      };
-      return Response.json(response);
+      return Response.json(await finalize(query, candidates, "google_books"));
     }
   } catch (e) {
     console.error("[search] Google Books error:", e);
   }
 
-  // 4. 네이버 책 검색 폴백 (한국 도서 롱테일 커버)
+  // 4. Gemini 최후 폴백 (Naver/Google에 없는 희소 도서)
   try {
-    console.log("[search] trying Naver Book fallback...");
-    const candidates = await searchBooksWithNaver(query);
-    console.log(`[search] Naver returned ${candidates.length} candidates`);
+    console.log("[search] trying Gemini fallback...");
+    const candidates = await searchBooksWithLLM(query);
+    console.log(`[search] Gemini returned ${candidates.length} candidates`);
     if (candidates.length > 0) {
-      // 표지 없는 항목은 ISBN 기반 Open Library Covers로 보강
-      fillCoversFromOpenLibrary(candidates);
-      // 캐시 저장 (비동기, 실패 시 로깅)
-      setCachedSearch(query, candidates, "naver").catch((e) =>
-        console.error("[search] naver cache save failed:", e)
-      );
-
-      const response: SearchResponse = {
-        candidates,
-        source: "naver",
-        cached: false,
-      };
-      return Response.json(response);
+      return Response.json(await finalize(query, candidates, "gemini"));
     }
   } catch (e) {
-    console.error("[search] Naver error:", e);
+    console.error("[search] Gemini error:", e);
   }
 
   // 5. 모든 검색 실패
