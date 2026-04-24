@@ -21,7 +21,7 @@ function getServiceClient(): UntypedSupabase {
 
 // 검색 파이프라인 스키마 버전.
 // 파이프라인(소스 순서·필터·요약 보강 등)이 바뀌면 올려서 기존 캐시를 자동 무효화한다.
-const CACHE_SCHEMA_VERSION = "v2";
+const CACHE_SCHEMA_VERSION = "v3";
 
 // 검색어 정규화 (캐시 키 생성)
 export function normalizeQuery(query: string): string {

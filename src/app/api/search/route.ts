@@ -29,9 +29,9 @@ async function finalize(
   // 표지 없는 항목은 Open Library로 최종 보강
   fillCoversFromOpenLibrary(candidates);
 
-  // 상위 3개 요약을 LLM으로 병렬 보강 (요약이 부실한 경우만)
+  // 상위 3개 요약을 LLM으로 병렬 보강 (부실·비한국어 요약 재생성)
   try {
-    await enrichSummaries(candidates, 3);
+    await enrichSummaries(candidates, query, 3);
   } catch (e) {
     console.error("[search] summary enrichment error:", e);
   }
