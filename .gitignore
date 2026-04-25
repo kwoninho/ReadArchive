@@ -54,3 +54,4 @@ tsconfig.tsbuildinfo
 
 # Claude local settings
 .claude/settings.local.json
+.vercel
