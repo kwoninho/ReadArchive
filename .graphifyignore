@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Build / Next.js output
+.next/
+out/
+build/
+dist/
+
+# Test + type build artifacts
+coverage/
+tsconfig.tsbuildinfo
+
+# Lockfiles (noise, not code)
+pnpm-lock.yaml
+
+# Supabase local state
+supabase/.branches/
+supabase/.temp/
+
+# Claude / OMC runtime
+.claude/worktrees/
+.omc/
+
+# graphify's own output (never graph itself)
+graphify-out/
