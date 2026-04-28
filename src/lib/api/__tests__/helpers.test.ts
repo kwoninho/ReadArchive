@@ -10,7 +10,7 @@ import {
 } from "../helpers";
 
 describe("isValidBookStatus", () => {
-  it.each(["WANT_TO_READ", "READING", "FINISHED"])(
+  it.each(["WANT_TO_READ", "READING", "PAUSED", "FINISHED"])(
     "returns true for valid status '%s'",
     (status) => {
       expect(isValidBookStatus(status)).toBe(true);

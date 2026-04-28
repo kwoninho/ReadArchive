@@ -99,14 +99,14 @@ export function KanbanBoard({ initialBooks }: KanbanBoardProps) {
       <CategoryFilter />
 
       {isDesktop ? (
-        /* 데스크톱: 3칼럼 드래그앤드롭 칸반 보드 */
+        /* 데스크톱: 4칼럼 드래그앤드롭 칸반 보드 */
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-4 gap-4">
             {BOOK_STATUSES.map((status) => (
               <BoardColumn
                 key={status}

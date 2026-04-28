@@ -16,7 +16,7 @@ CREATE TABLE books (
   summary TEXT,
   cover_url TEXT,
   status TEXT NOT NULL DEFAULT 'WANT_TO_READ'
-    CHECK (status IN ('WANT_TO_READ', 'READING', 'FINISHED')),
+    CHECK (status IN ('WANT_TO_READ', 'READING', 'PAUSED', 'FINISHED')),
   rating INTEGER CHECK (rating >= 1 AND rating <= 5),
   started_at TIMESTAMPTZ,
   finished_at TIMESTAMPTZ,

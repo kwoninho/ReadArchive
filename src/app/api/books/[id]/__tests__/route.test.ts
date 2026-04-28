@@ -46,7 +46,7 @@ vi.mock("@/lib/api/helpers", () => ({
     return val.every((i: unknown) => typeof i === "string") ? val : undefined;
   },
   isValidBookStatus: (v: unknown) =>
-    typeof v === "string" && ["WANT_TO_READ", "READING", "FINISHED"].includes(v),
+    typeof v === "string" && ["WANT_TO_READ", "READING", "PAUSED", "FINISHED"].includes(v),
   isValidRating: (v: unknown) => {
     if (v === null) return true;
     return typeof v === "number" && Number.isInteger(v) && v >= 1 && v <= 5;
@@ -189,5 +189,26 @@ describe("PATCH /api/books/[id] - auth & not found (T-10.07)", () => {
     mockSingle.mockResolvedValue({ data: null, error: { message: "not found" } });
     const res = await callPATCH({ currentPage: 100 });
     expect(res.status).toBe(404);
+  });
+});
+
+describe("PATCH /api/books/[id] - status updates", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setupAuth();
+  });
+
+  async function callPATCH(body: Record<string, unknown>) {
+    const { PATCH } = await import("../route");
+    return PATCH(makeRequest(body) as never, routeParams as never);
+  }
+
+  it("accepts PAUSED without setting completion fields", async () => {
+    setupSuccessfulUpdate();
+
+    const res = await callPATCH({ status: "PAUSED" });
+
+    expect(res.status).not.toBe(400);
+    expect(mockUpdate).toHaveBeenCalledWith({ status: "PAUSED" });
   });
 });

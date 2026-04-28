@@ -276,6 +276,26 @@ describe("useBookStore", () => {
         "2024-03-01T00:00:00Z"
       );
     });
+
+    it("moves to PAUSED without setting finishedAt or currentPage", () => {
+      useBookStore.setState({
+        books: [
+          makeBook({
+            id: "1",
+            status: "READING",
+            currentPage: 120,
+            finishedAt: null,
+          }),
+        ],
+      });
+
+      useBookStore.getState().moveBook("1", "PAUSED");
+
+      const book = useBookStore.getState().books[0];
+      expect(book.status).toBe("PAUSED");
+      expect(book.finishedAt).toBeNull();
+      expect(book.currentPage).toBe(120);
+    });
   });
 
   describe("filteredBooks", () => {
@@ -410,6 +430,7 @@ describe("useBookStore", () => {
           makeBook({ id: "1", status: "WANT_TO_READ" }),
           makeBook({ id: "2", status: "READING" }),
           makeBook({ id: "3", status: "WANT_TO_READ" }),
+          makeBook({ id: "4", status: "PAUSED" }),
         ],
         filterQuery: "",
       });
@@ -420,6 +441,10 @@ describe("useBookStore", () => {
       const reading = useBookStore.getState().booksByStatus("READING");
       expect(reading).toHaveLength(1);
       expect(reading[0].id).toBe("2");
+
+      const paused = useBookStore.getState().booksByStatus("PAUSED");
+      expect(paused).toHaveLength(1);
+      expect(paused[0].id).toBe("4");
     });
 
     it("applies filterQuery together with status", () => {

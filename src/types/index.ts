@@ -1,4 +1,4 @@
-export const BOOK_STATUSES = ["WANT_TO_READ", "READING", "FINISHED"] as const;
+export const BOOK_STATUSES = ["WANT_TO_READ", "READING", "PAUSED", "FINISHED"] as const;
 export type BookStatus = (typeof BOOK_STATUSES)[number];
 
 export interface Category {

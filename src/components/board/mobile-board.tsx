@@ -13,13 +13,19 @@ import type { Book, BookStatus } from "@/types";
 const TABS: { status: BookStatus; label: string }[] = [
   { status: "WANT_TO_READ", label: "읽고싶은" },
   { status: "READING", label: "읽는중" },
+  { status: "PAUSED", label: "멈춤" },
   { status: "FINISHED", label: "완료" },
 ];
 
-// 다음 상태로 이동하는 버튼 설정
-const NEXT_STATUS: Partial<Record<BookStatus, { label: string; next: BookStatus }>> = {
-  WANT_TO_READ: { label: "읽기 시작 ▶", next: "READING" },
-  READING: { label: "독서 완료 ✓", next: "FINISHED" },
+// 모바일 카드에서 제공할 상태 변경 액션
+const STATUS_ACTIONS: Record<BookStatus, { label: string; next: BookStatus }[]> = {
+  WANT_TO_READ: [{ label: "읽기 시작 ▶", next: "READING" }],
+  READING: [
+    { label: "읽다 멈춤", next: "PAUSED" },
+    { label: "독서 완료 ✓", next: "FINISHED" },
+  ],
+  PAUSED: [{ label: "다시 읽기 ▶", next: "READING" }],
+  FINISHED: [],
 };
 
 interface MobileBoardProps {
@@ -62,7 +68,7 @@ export function MobileBoard({ onAddClick }: MobileBoardProps) {
             <button
               key={tab.status}
               onClick={() => setActiveTab(tab.status)}
-              className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
+              className={`flex-1 whitespace-nowrap rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
                 isActive
                   ? "bg-background shadow-sm"
                   : "text-muted-foreground"
@@ -77,7 +83,7 @@ export function MobileBoard({ onAddClick }: MobileBoardProps) {
       {/* 책 리스트 */}
       <div className="flex flex-col gap-2">
         {books.map((book) => {
-          const nextAction = NEXT_STATUS[book.status];
+          const actions = STATUS_ACTIONS[book.status];
           return (
             <div key={book.id} className="flex items-center gap-3 rounded-lg border p-3">
               <Link href={`/books/${book.id}`} className="flex flex-1 gap-3">
@@ -102,15 +108,20 @@ export function MobileBoard({ onAddClick }: MobileBoardProps) {
                   )}
                 </div>
               </Link>
-              {nextAction && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="shrink-0 text-xs"
-                  onClick={() => handleMove(book, nextAction.next)}
-                >
-                  {nextAction.label}
-                </Button>
+              {actions.length > 0 && (
+                <div className="flex shrink-0 flex-col gap-1">
+                  {actions.map((action) => (
+                    <Button
+                      key={action.next}
+                      variant="outline"
+                      size="sm"
+                      className="text-xs"
+                      onClick={() => handleMove(book, action.next)}
+                    >
+                      {action.label}
+                    </Button>
+                  ))}
+                </div>
               )}
             </div>
           );

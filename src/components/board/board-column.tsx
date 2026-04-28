@@ -8,6 +8,7 @@ import { DraggableCard } from "./draggable-card";
 const STATUS_CONFIG: Record<BookStatus, { label: string; emoji: string }> = {
   WANT_TO_READ: { label: "읽고 싶은 책", emoji: "📋" },
   READING: { label: "읽는 중", emoji: "📖" },
+  PAUSED: { label: "읽다 멈춤", emoji: "⏸️" },
   FINISHED: { label: "다 읽은 책", emoji: "✅" },
 };
 

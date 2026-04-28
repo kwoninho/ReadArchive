@@ -12,6 +12,7 @@ import type { BookStatus } from "@/types";
 const STATUS_OPTIONS: { value: BookStatus; label: string }[] = [
   { value: "WANT_TO_READ", label: "읽고 싶은 책" },
   { value: "READING", label: "읽는 중" },
+  { value: "PAUSED", label: "읽다 멈춤" },
   { value: "FINISHED", label: "다 읽은 책" },
 ];
 
