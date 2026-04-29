@@ -5,6 +5,21 @@
 
 ---
 
+## UI 개선
+
+### 모바일 화면 오버플로/잘림 검수 및 수정 - 2026-04-29
+- `mobile-board`: 4탭 라벨 `min-w-0 truncate` + `text-[11px]`로 축소, 책 카드 액션 버튼을 카드 하단 `flex-wrap` 푸터로 분리하여 책 정보가 가로 폭 전체 사용
+- `book-detail`: 정보 컨테이너 `min-w-0`, 제목/저자/요약/출판 메타에 `break-words`, ISBN은 `break-all`
+- `book-edit-form`: 저자/출판사 `grid-cols-1 sm:grid-cols-2`, 출판년도/페이지/ISBN `grid-cols-2 sm:grid-cols-3`(ISBN은 모바일에서 `col-span-2`)로 압축 해소
+- `note-list`: 메모 본문 `break-words`, 메타 행 `flex-wrap` + 시간 텍스트 `min-w-0`
+- `search-result-card`: 정보 영역 `min-w-0` + 텍스트 `break-words`
+- `reading-progress`: 입력 행 `flex-wrap`
+- `category-filter`: 칩 `max-w-full truncate`
+- `globals.css`: body `overflow-x: hidden` 방어 장치
+- 기존 단위 테스트는 텍스트/접근성 이름 기반이라 회귀 없음
+
+---
+
 ## 독서 상태 확장
 
 ### '읽다 멈춤' 상태 추가 - 2026-04-29
