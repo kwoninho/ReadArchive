@@ -5,6 +5,19 @@
 
 ---
 
+## 독서 상태 확장
+
+### '읽다 멈춤' 상태 추가 - 2026-04-29
+- `src/types/index.ts`: `BOOK_STATUSES`에 `PAUSED` 추가 (`BookStatus` 자동 확장)
+- `supabase/migrations/006_add_paused_book_status.sql`, `supabase/schema.sql`: `books_status_check` 제약을 `('WANT_TO_READ','READING','PAUSED','FINISHED')`로 갱신 — 원격 DB에 별도 적용 필요
+- `kanban-board`: 데스크톱 그리드 3→4 컬럼, `board-column`에 `⏸️ 읽다 멈춤` 라벨 추가
+- `mobile-board`: `멈춤` 탭 추가, `READING→PAUSED`(읽다 멈춤) 및 `PAUSED→READING`(다시 읽기) 상태 이동 버튼; 카드별 다중 액션 지원
+- `status-select`: 상세 화면 상태 선택 옵션에 `읽다 멈춤` 추가
+- 자동 동기화 동작 유지: `READING` 전환 시 `started_at`, `FINISHED` 전환 시 `finished_at`/`current_page` 자동 설정. `PAUSED` 전환은 별도 부수효과 없음
+- 테스트: `helpers.test`/`route.test`(API 검증 + PAUSED 부수효과 미발생), `book-store.test`(moveBook PAUSED 분기, `booksByStatus` 필터), `mobile-board.test` 신규(탭/액션 렌더)
+
+---
+
 ## 검색 기능 개선
 
 ### Next.js Image 최적화 활성화 - 2026-04-18
