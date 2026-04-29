@@ -69,7 +69,7 @@ export function ReadingProgress({
       )}
 
       {/* 페이지 입력 */}
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Input
           type="number"
           min={0}
@@ -78,7 +78,7 @@ export function ReadingProgress({
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="현재 페이지"
-          className="w-28"
+          className="w-28 min-w-0"
           disabled={isSaving}
         />
         {pageCount && <span className="text-sm text-muted-foreground">/ {pageCount}p</span>}

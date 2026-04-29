@@ -43,7 +43,7 @@ function FilterChip({
       type="button"
       data-active={active}
       onClick={onClick}
-      className={`rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors ${
+      className={`max-w-full truncate rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors ${
         active
           ? "border-primary bg-primary text-primary-foreground"
           : "border-border bg-background text-muted-foreground hover:bg-accent"

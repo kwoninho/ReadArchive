@@ -43,14 +43,14 @@ export function SearchResultCard({
       </div>
 
       {/* 책 정보 */}
-      <div className="flex flex-1 flex-col justify-between">
-        <div>
-          <p className="font-medium leading-tight">{candidate.title}</p>
-          <p className="text-sm text-muted-foreground">
+      <div className="flex min-w-0 flex-1 flex-col justify-between gap-2">
+        <div className="min-w-0">
+          <p className="break-words font-medium leading-tight">{candidate.title}</p>
+          <p className="break-words text-sm text-muted-foreground">
             {candidate.author}
             {candidate.publisher && ` | ${candidate.publisher}`}
           </p>
-          <p className="text-xs text-muted-foreground">
+          <p className="break-words text-xs text-muted-foreground">
             {candidate.publishedYear > 0 && `${candidate.publishedYear}년`}
             {candidate.pageCount > 0 && ` | ${candidate.pageCount}p`}
           </p>

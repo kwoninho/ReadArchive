@@ -101,7 +101,7 @@ export function BookEditForm({ book, onSave, onCancel }: BookEditFormProps) {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="grid gap-2">
             <Label htmlFor="edit-author">저자</Label>
             <Input
@@ -120,7 +120,7 @@ export function BookEditForm({ book, onSave, onCancel }: BookEditFormProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           <div className="grid gap-2">
             <Label htmlFor="edit-year">출판년도</Label>
             <Input
@@ -139,7 +139,7 @@ export function BookEditForm({ book, onSave, onCancel }: BookEditFormProps) {
               onChange={(e) => setPageCount(e.target.value)}
             />
           </div>
-          <div className="grid gap-2">
+          <div className="col-span-2 grid gap-2 sm:col-span-1">
             <Label htmlFor="edit-isbn">ISBN</Label>
             <Input
               id="edit-isbn"

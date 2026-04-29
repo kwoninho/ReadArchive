@@ -199,17 +199,17 @@ export function BookDetail({ book: rawBook }: BookDetailProps) {
             </div>
 
             {/* 상세 정보 */}
-            <div className="flex flex-1 flex-col gap-2">
-              <h1 className="text-xl font-bold">{book.title}</h1>
+            <div className="flex min-w-0 flex-1 flex-col gap-2">
+              <h1 className="break-words text-xl font-bold">{book.title}</h1>
               {book.author && (
-                <p className="text-muted-foreground">{book.author}</p>
+                <p className="break-words text-muted-foreground">{book.author}</p>
               )}
               {book.categories.length > 0 && (
                 <div className="mt-1">
                   <CategoryBadge categories={book.categories} />
                 </div>
               )}
-              <p className="text-sm text-muted-foreground">
+              <p className="break-words text-sm text-muted-foreground">
                 {[
                   book.publisher,
                   book.publishedYear && `${book.publishedYear}년`,
@@ -219,7 +219,7 @@ export function BookDetail({ book: rawBook }: BookDetailProps) {
                   .join(" | ")}
               </p>
               {book.isbn && (
-                <p className="text-xs text-muted-foreground">
+                <p className="break-all text-xs text-muted-foreground">
                   ISBN: {book.isbn}
                 </p>
               )}
@@ -269,7 +269,7 @@ export function BookDetail({ book: rawBook }: BookDetailProps) {
           {book.summary && (
             <div className="rounded-lg border p-4">
               <h3 className="mb-2 font-semibold">요약</h3>
-              <p className="text-sm text-muted-foreground">{book.summary}</p>
+              <p className="break-words text-sm text-muted-foreground">{book.summary}</p>
             </div>
           )}
         </>

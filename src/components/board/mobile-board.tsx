@@ -68,7 +68,7 @@ export function MobileBoard({ onAddClick }: MobileBoardProps) {
             <button
               key={tab.status}
               onClick={() => setActiveTab(tab.status)}
-              className={`flex-1 whitespace-nowrap rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
+              className={`min-w-0 flex-1 truncate rounded-md px-1.5 py-1.5 text-[11px] font-medium transition-colors sm:text-xs ${
                 isActive
                   ? "bg-background shadow-sm"
                   : "text-muted-foreground"
@@ -85,8 +85,8 @@ export function MobileBoard({ onAddClick }: MobileBoardProps) {
         {books.map((book) => {
           const actions = STATUS_ACTIONS[book.status];
           return (
-            <div key={book.id} className="flex items-center gap-3 rounded-lg border p-3">
-              <Link href={`/books/${book.id}`} className="flex flex-1 gap-3">
+            <div key={book.id} className="flex flex-col gap-2 rounded-lg border p-3">
+              <Link href={`/books/${book.id}`} className="flex min-w-0 gap-3">
                 <div className="relative h-14 w-10 shrink-0 overflow-hidden rounded bg-muted">
                   {book.coverUrl ? (
                     <Image
@@ -101,7 +101,7 @@ export function MobileBoard({ onAddClick }: MobileBoardProps) {
                     <div className="flex h-full items-center justify-center text-[8px]">📚</div>
                   )}
                 </div>
-                <div className="flex min-w-0 flex-col justify-center">
+                <div className="flex min-w-0 flex-1 flex-col justify-center">
                   <p className="truncate text-sm font-medium">{book.title}</p>
                   {book.author && (
                     <p className="truncate text-xs text-muted-foreground">{book.author}</p>
@@ -109,7 +109,7 @@ export function MobileBoard({ onAddClick }: MobileBoardProps) {
                 </div>
               </Link>
               {actions.length > 0 && (
-                <div className="flex shrink-0 flex-col gap-1">
+                <div className="flex flex-wrap justify-end gap-2 border-t pt-2">
                   {actions.map((action) => (
                     <Button
                       key={action.next}

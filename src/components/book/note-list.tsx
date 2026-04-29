@@ -108,15 +108,15 @@ export function NoteList({ bookId }: NoteListProps) {
               />
             ) : (
               <div key={note.id} className="rounded-md border p-3">
-                <p className="whitespace-pre-wrap text-sm">{note.content}</p>
-                <div className="mt-2 flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">
+                <p className="break-words whitespace-pre-wrap text-sm">{note.content}</p>
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                  <span className="min-w-0 break-words text-xs text-muted-foreground">
                     {formatDateTime(note.created_at)}{" "}
                     <span className="opacity-60">
                       ({formatRelativeTime(note.created_at)})
                     </span>
                   </span>
-                  <div className="flex gap-1">
+                  <div className="flex shrink-0 gap-1">
                     <Button
                       variant="ghost"
                       size="sm"
