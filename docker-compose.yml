@@ -3,6 +3,7 @@ services:
     build:
       context: .
       target: dev
+    restart: unless-stopped
     ports:
       - "3000:3000"
     command: ["pnpm", "exec", "next", "dev", "--webpack", "-H", "0.0.0.0"]
